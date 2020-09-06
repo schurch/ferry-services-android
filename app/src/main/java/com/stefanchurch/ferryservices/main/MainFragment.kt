@@ -1,16 +1,17 @@
 package com.stefanchurch.ferryservices.main
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanchurch.ferryservices.API
 import com.stefanchurch.ferryservices.databinding.MainFragmentBinding
+import io.sentry.core.Sentry
+
 
 class MainFragment : Fragment() {
 
@@ -22,7 +23,11 @@ class MainFragment : Fragment() {
     private lateinit var viewAdapter: ServicesAdapter
     private lateinit var viewManager: LinearLayoutManager
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         val binding = MainFragmentBinding.inflate(inflater, container, false)
         context ?: return binding.root
 
@@ -33,7 +38,6 @@ class MainFragment : Fragment() {
             setHasFixedSize(true)
             layoutManager = viewManager
             adapter = viewAdapter
-            addItemDecoration(DividerItemDecoration(context, viewManager.orientation))
         }
 
         model.services.observe(viewLifecycleOwner) { services ->

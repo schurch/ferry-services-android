@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "com.stefanchurch.ferryservices"
-        minSdkVersion 14
+        minSdkVersion 16
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -59,4 +59,5 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.0-RC" // JVM dependency
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.2.0"
     implementation "androidx.core:core-ktx:1.3.1"
+    implementation 'io.sentry:sentry-android:2.3.1'
 }
