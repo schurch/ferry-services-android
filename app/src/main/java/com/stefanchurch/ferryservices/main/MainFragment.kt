@@ -1,5 +1,6 @@
 package com.stefanchurch.ferryservices.main
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,9 +10,8 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanchurch.ferryservices.API
+import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.databinding.MainFragmentBinding
-import io.sentry.core.Sentry
-
 
 class MainFragment : Fragment() {
 
@@ -45,7 +45,21 @@ class MainFragment : Fragment() {
             viewAdapter.notifyDataSetChanged()
         }
 
+        model.error.observe(viewLifecycleOwner) { error ->
+            val builder = AlertDialog.Builder(binding.root.context)
+            builder.setMessage(error)
+                .setPositiveButton(R.string.ok) { dialog, _ ->
+                    dialog.dismiss()
+                }
+            builder.create().show()
+        }
+
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        model.reloadServices()
+    }
 }

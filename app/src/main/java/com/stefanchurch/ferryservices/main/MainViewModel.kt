@@ -12,9 +12,18 @@ class MainViewModel(private val api: API) : ViewModel() {
         MutableLiveData<Array<Service>>()
     }
 
-    init {
+    val error: MutableLiveData<String> by lazy {
+        MutableLiveData<String>()
+    }
+
+    fun reloadServices() {
         viewModelScope.launch {
-            services.value = api.getServices()
+            try {
+                services.value = api.getServices()
+            }
+            catch (e: Throwable) {
+                error.value = "An error occurred. Please try again."
+            }
         }
     }
 }
