@@ -5,13 +5,6 @@ import kotlinx.android.parcel.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-enum class Status(val value: Int) {
-    NORMAL(0),
-    DISRUPTED(1),
-    CANCELLED(2),
-    UNKNOWN(-99)
-}
-
 @Parcelize
 @Serializable
 data class Service(
@@ -60,11 +53,3 @@ data class Service(
         return result
     }
 }
-
-@Parcelize
-@Serializable
-data class Location(
-    val name: String,
-    val latitude: Double,
-    val longitude: Double
-) : Parcelable

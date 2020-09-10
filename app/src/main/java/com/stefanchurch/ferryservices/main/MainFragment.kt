@@ -45,7 +45,7 @@ class MainFragment : Fragment() {
             viewAdapter.notifyDataSetChanged()
         }
 
-        model.error.observe(viewLifecycleOwner) { error ->
+        model.showError = { error ->
             val builder = AlertDialog.Builder(binding.root.context)
             builder.setMessage(error)
                 .setPositiveButton(R.string.ok) { dialog, _ ->

@@ -12,9 +12,7 @@ class MainViewModel(private val api: API) : ViewModel() {
         MutableLiveData<Array<Service>>()
     }
 
-    val error: MutableLiveData<String> by lazy {
-        MutableLiveData<String>()
-    }
+    var showError: ((String) -> Unit)? = null
 
     fun reloadServices() {
         viewModelScope.launch {
@@ -22,7 +20,7 @@ class MainViewModel(private val api: API) : ViewModel() {
                 services.value = api.getServices()
             }
             catch (e: Throwable) {
-                error.value = "An error occurred. Please try again."
+                showError?.invoke("There was a problem updating the services. Please try again later.")
             }
         }
     }
