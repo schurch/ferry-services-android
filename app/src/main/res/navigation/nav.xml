@@ -8,7 +8,7 @@
     <fragment
         android:id="@+id/mainFragment"
         android:name="com.stefanchurch.ferryservices.main.MainFragment"
-        android:label="main_fragment"
+        android:label="Services"
         tools:layout="@layout/main_fragment" >
         <action
             android:id="@+id/action_mainFragment_to_placeholder"
@@ -21,7 +21,7 @@
     <fragment
         android:id="@+id/detailFragment"
         android:name="com.stefanchurch.ferryservices.detail.DetailFragment"
-        android:label="detail_fragement" >
+        android:label="Details" >
         <action
             android:id="@+id/action_detailFragment_to_additional"
             app:destination="@id/additionalFragment"
@@ -36,7 +36,7 @@
     <fragment
         android:id="@+id/additionalFragment"
         android:name="com.stefanchurch.ferryservices.additional.AdditionalFragment"
-        android:label="additional_fragment" >
+        android:label="Additional info" >
         <argument
             android:name="service"
             app:argType="com.stefanchurch.ferryservices.models.Service" />

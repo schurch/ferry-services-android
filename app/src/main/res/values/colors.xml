@@ -7,4 +7,5 @@
     <color name="colorStatusDisrupted">#FD940A</color>
     <color name="colorStatusCancelled">#D62A0B</color>
     <color name="colorStatusUnknown">#D7D7D7</color>
+    <color name="colorToolbar">#ffffff</color>
 </resources>

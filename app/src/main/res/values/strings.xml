@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Ferries</string>
     <string name="ok">OK</string>
+    <string name="additional_info">Additional info</string>
 </resources>
