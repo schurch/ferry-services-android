@@ -7,12 +7,14 @@ import com.stefanchurch.ferryservices.API
 import com.stefanchurch.ferryservices.models.Service
 import kotlinx.coroutines.launch
 
-class MainViewModel(private val api: API) : ViewModel() {
+class MainViewModel(
+    private val api: API,
+    var showError: ((String) -> Unit)? = null
+) : ViewModel() {
+
     val services: MutableLiveData<Array<Service>> by lazy {
         MutableLiveData<Array<Service>>()
     }
-
-    var showError: ((String) -> Unit)? = null
 
     fun reloadServices() {
         viewModelScope.launch {
@@ -24,4 +26,5 @@ class MainViewModel(private val api: API) : ViewModel() {
             }
         }
     }
+
 }

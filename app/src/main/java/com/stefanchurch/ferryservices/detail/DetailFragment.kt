@@ -28,7 +28,7 @@ class DetailFragment : Fragment() {
         binding.model = model
         binding.lifecycleOwner = viewLifecycleOwner
 
-        binding.statusView.background.setColorFilter(args.service.statusColor(binding.root.context), PorterDuff.Mode.ADD)
+        binding.statusView.background.setColorFilter(args.service.statusColor(binding.root.context), PorterDuff.Mode.SRC_ATOP)
 
         model.navigateToAdditionalInfo = { direction ->
             view?.findNavController()?.navigate(direction)

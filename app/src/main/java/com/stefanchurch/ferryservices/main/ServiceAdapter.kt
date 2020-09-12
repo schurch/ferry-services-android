@@ -22,7 +22,7 @@ class ServicesAdapter(var services: Array<Service> = arrayOf()) : RecyclerView.A
         }
 
         fun bind(item: Service) {
-            binding.statusView.background.setColorFilter(item.statusColor(binding.root.context), PorterDuff.Mode.ADD)
+            binding.statusView.background.setColorFilter(item.statusColor(binding.root.context), PorterDuff.Mode.SRC_ATOP)
             binding.service = item
             binding.executePendingBindings()
         }
