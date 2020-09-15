@@ -6,7 +6,11 @@ import androidx.databinding.DataBindingUtil.setContentView
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.iid.FirebaseInstanceId
 import com.stefanchurch.ferryservices.databinding.MainActivityBinding
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,6 +22,17 @@ class MainActivity : AppCompatActivity() {
         val navController = (supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment).navController
         val appBarConfiguration = AppBarConfiguration(navController.graph)
         NavigationUI.setupWithNavController(findViewById(R.id.toolbar), navController, appBarConfiguration)
+
+        FirebaseInstanceId.getInstance().instanceId
+            .addOnCompleteListener(OnCompleteListener { task ->
+                task.result?.token?.let {
+                    val installationID = InstallationID.getInstallationID(applicationContext)
+                    GlobalScope.launch {
+                        API.getInstance(applicationContext).updateInstallation(installationID, it)
+                    }
+                }
+            })
+
     }
 
 }

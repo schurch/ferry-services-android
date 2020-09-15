@@ -1,4 +1,5 @@
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
 
     <data>
@@ -28,8 +29,8 @@
                     android:id="@+id/areaTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@{model.area}"
                     android:textSize="24sp"
+                    android:text="@{model.area}"
                     android:textStyle="bold"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -42,7 +43,7 @@
                     android:layout_marginBottom="24dp"
                     android:text="@{model.route}"
                     android:textSize="18sp"
-                    app:layout_constraintBottom_toTopOf="@+id/statusTextView"
+                    app:layout_constraintBottom_toTopOf="@+id/guideline"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/areaTextView" />
 
@@ -81,16 +82,32 @@
                     app:layout_constraintTop_toBottomOf="@+id/routeTextView"
                     app:layout_constraintGuide_percent="0.5"/>
 
+                <Switch
+                    android:id="@+id/subscribeSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="48dp"
+                    android:text="Subscribe to updates"
+                    android:textColor="#606060"
+                    android:textSize="18sp"
+                    android:checked="@{model.isSubscribed}"
+                    android:enabled="@{model.isSubscribedEnabled}"
+                    app:layout_constraintBottom_toTopOf="@+id/additionalInfoButton"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/guideline" />
+
                 <Button
                     android:id="@+id/additionalInfoButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="48dp"
+                    android:layout_marginTop="24dp"
                     android:text="@string/additional_info"
                     android:visibility="@{model.additionalInfoVisible ? View.VISIBLE : View.GONE}"
                     android:onClick="@{() -> model.navigateToAdditionalInfo()}"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/guideline" />
+                    app:layout_constraintTop_toBottomOf="@+id/subscribeSwitch"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

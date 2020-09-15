@@ -24,6 +24,18 @@
         <meta-data
             android:name="io.sentry.dsn"
             android:value="https://41e769d708254514b49ac860e734d270@o434952.ingest.sentry.io/5418398" />
+
+        <service
+            android:name=".FerriesMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorAccent" />
     </application>
 
 </manifest>
