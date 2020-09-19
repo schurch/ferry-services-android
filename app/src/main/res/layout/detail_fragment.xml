@@ -1,12 +1,8 @@
-<layout xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" >
 
     <data>
         <import type="android.view.View"/>
-        <variable
-            name="sale"
-            type="java.lang.Boolean"/>
         <variable
             name="model"
             type="com.stefanchurch.ferryservices.detail.DetailViewModel" />
@@ -25,88 +21,70 @@
                 android:layout_height="match_parent"
                 android:layout_margin="16dp">
 
-                <TextView
-                    android:id="@+id/areaTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="24sp"
-                    android:text="@{model.area}"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
 
-                <TextView
-                    android:id="@+id/routeTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="24dp"
-                    android:text="@{model.route}"
-                    android:textSize="18sp"
-                    app:layout_constraintBottom_toTopOf="@+id/guideline"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/areaTextView" />
+                    <TextView
+                        android:id="@+id/areaTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@{model.area}"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
 
-                <View
-                    android:id="@+id/statusView"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginTop="24dp"
-                    android:background="@drawable/status_circle"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="@id/guideline"
-                    app:layout_constraintBottom_toBottomOf="@id/guideline" />
+                    <TextView
+                        android:id="@+id/routeTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@{model.route}"
+                        android:textSize="18sp" />
 
-                <TextView
-                    android:id="@+id/statusTextView"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_marginLeft="16dp"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginEnd="16dp"
-                    android:layout_marginRight="16dp"
-                    android:text="@{model.statusText}"
-                    android:textSize="18sp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@+id/statusView"
-                    app:layout_constraintTop_toTopOf="@id/guideline"
-                    app:layout_constraintBottom_toBottomOf="@id/guideline" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:orientation="horizontal">
 
-                <androidx.constraintlayout.widget.Guideline
-                    android:id="@+id/guideline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/routeTextView"
-                    app:layout_constraintGuide_percent="0.5"/>
+                        <View
+                            android:id="@+id/statusView"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/status_circle" />
 
-                <Switch
-                    android:id="@+id/subscribeSwitch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="48dp"
-                    android:text="Subscribe to updates"
-                    android:textColor="#606060"
-                    android:textSize="18sp"
-                    android:checked="@{model.isSubscribed}"
-                    android:enabled="@{model.isSubscribedEnabled}"
-                    app:layout_constraintBottom_toTopOf="@+id/additionalInfoButton"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/guideline" />
+                        <TextView
+                            android:id="@+id/statusTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="20dp"
+                            android:layout_gravity="center"
+                            android:text="@{model.statusText}"
+                            android:textSize="18sp" />
+                    </LinearLayout>
 
-                <Button
-                    android:id="@+id/additionalInfoButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/additional_info"
-                    android:visibility="@{model.additionalInfoVisible ? View.VISIBLE : View.GONE}"
-                    android:onClick="@{() -> model.navigateToAdditionalInfo()}"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/subscribeSwitch"
-                    app:layout_constraintBottom_toBottomOf="parent" />
+                    <Switch
+                        android:id="@+id/subscribeSwitch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:checked="@{model.isSubscribed}"
+                        android:enabled="@{model.isSubscribedEnabled}"
+                        android:text="@string/subscribe_to_updates"
+                        android:textColor="#606060"
+                        android:textSize="18sp" />
+
+                    <Button
+                        android:id="@+id/additionalInfoButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:onClick="@{() -> model.navigateToAdditionalInfo()}"
+                        android:text="@string/additional_info"
+                        android:visibility="@{model.additionalInfoVisible ? View.VISIBLE : View.GONE}" />
+                </LinearLayout>
 
 
             </androidx.constraintlayout.widget.ConstraintLayout>

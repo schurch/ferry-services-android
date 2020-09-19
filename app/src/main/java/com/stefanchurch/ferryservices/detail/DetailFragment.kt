@@ -11,8 +11,8 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import com.stefanchurch.ferryservices.API
-import com.stefanchurch.ferryservices.InstallationID
 import com.stefanchurch.ferryservices.R
+import com.stefanchurch.ferryservices.SharedPreferences
 import com.stefanchurch.ferryservices.databinding.DetailFragmentBinding
 import com.stefanchurch.ferryservices.models.statusColor
 
@@ -22,7 +22,7 @@ class DetailFragment : Fragment() {
         DetailViewModelFactory(
             args.service,
             API.getInstance(requireContext().applicationContext),
-            InstallationID.getInstallationID(requireContext().applicationContext),
+            SharedPreferences(requireContext().applicationContext),
             this
         )
     }

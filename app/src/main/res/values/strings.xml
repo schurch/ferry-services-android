@@ -4,4 +4,10 @@
     <string name="additional_info">Additional info</string>
     <string name="preferences_key">com.stefanchurch.ferryservices.preferences</string>
     <string name="preferences_installation_id_key">installationID</string>
+    <string name="preferences_created_installation_key">createdInstallation</string>
+    <string name="status_normal">There are currently no disruptions with this service</string>
+    <string name="status_disrupted">There are disruptions with this service</string>
+    <string name="status_cancelled">Sailings have been cancelled for this service</string>
+    <string name="status_unknown">Unable to fetch the disruption status for this service</string>
+    <string name="subscribe_to_updates">Subscribe to updates</string>
 </resources>

@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavDirections
 import com.stefanchurch.ferryservices.API
+import com.stefanchurch.ferryservices.Preferences
+import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.models.Service
 import com.stefanchurch.ferryservices.models.Status
 import com.stefanchurch.ferryservices.models.status
@@ -14,17 +16,21 @@ import java.util.*
 class DetailViewModel(
     val service: Service,
     val api: API,
-    val installationID: UUID,
-    val area: MutableLiveData<String> = MutableLiveData(service.area),
-    val route: MutableLiveData<String> = MutableLiveData(service.route),
-    val statusText: MutableLiveData<String> = MutableLiveData(service.statusText),
+    private val preferences: Preferences,
+    val area: String = service.area,
+    val route: String = service.route,
+    val statusText: MutableLiveData<Int> = MutableLiveData(service.statusText),
     val additionalInfoVisible: MutableLiveData<Boolean> = MutableLiveData<Boolean>(service.additionalInfo?.isNotEmpty()),
     val isSubscribed: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false),
-    val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false),
+    val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(preferences.lookupBool(R.string.preferences_created_installation_key)),
     var navigateToAdditionalInfo: ((NavDirections) -> Unit)? = null
 ) : ViewModel()  {
 
+    private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
+
     fun getSubscribedStatus() {
+        if (installationID == null) return
+
         viewModelScope.launch {
             try {
                 val services = api.getSubscribedServices(installationID)
@@ -38,6 +44,8 @@ class DetailViewModel(
     }
 
     fun updatedSubscribedStatus(subscribed: Boolean) {
+        if (installationID == null) return
+
         isSubscribedEnabled.value = false
 
         viewModelScope.launch {
@@ -48,6 +56,7 @@ class DetailViewModel(
                 else {
                     api.removeService(installationID , service.serviceID)
                 }
+
                 isSubscribedEnabled.value = true
             }
             catch (e: Throwable) {
@@ -63,10 +72,10 @@ class DetailViewModel(
     }
 }
 
-private val Service.statusText: String
+private val Service.statusText: Int
     get() = when (status) {
-        Status.NORMAL -> "There are currently no disruptions with this service"
-        Status.DISRUPTED -> "There are disruptions with this service"
-        Status.CANCELLED -> "Sailings have been cancelled for this service"
-        Status.UNKNOWN -> "Unable to fetch the disruption status for this service"
+        Status.NORMAL -> R.string.status_normal
+        Status.DISRUPTED -> R.string.status_disrupted
+        Status.CANCELLED -> R.string.status_cancelled
+        Status.UNKNOWN -> R.string.status_unknown
     }

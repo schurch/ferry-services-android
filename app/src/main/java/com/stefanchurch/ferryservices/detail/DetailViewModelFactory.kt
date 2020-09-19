@@ -6,13 +6,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.savedstate.SavedStateRegistryOwner
 import com.stefanchurch.ferryservices.API
+import com.stefanchurch.ferryservices.Preferences
 import com.stefanchurch.ferryservices.models.Service
-import java.util.*
 
 class DetailViewModelFactory(
     val service: Service,
     val api: API,
-    val installationID: UUID,
+    val preferences: Preferences,
     owner: SavedStateRegistryOwner,
     defaultArgs: Bundle? = null
 ) : AbstractSavedStateViewModelFactory(owner, defaultArgs) {
@@ -22,7 +22,7 @@ class DetailViewModelFactory(
         modelClass: Class<T>,
         handle: SavedStateHandle
     ): T {
-        return DetailViewModel(service, api, installationID) as T
+        return DetailViewModel(service, api, preferences) as T
     }
 
 }
