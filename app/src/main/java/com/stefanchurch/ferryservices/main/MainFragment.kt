@@ -11,12 +11,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanchurch.ferryservices.API
 import com.stefanchurch.ferryservices.R
+import com.stefanchurch.ferryservices.SharedPreferences
 import com.stefanchurch.ferryservices.databinding.MainFragmentBinding
 
 class MainFragment : Fragment() {
 
     private val model: MainViewModel by viewModels {
-        MainViewModelFactory(API.getInstance(requireContext().applicationContext), this)
+        MainViewModelFactory(
+            API.getInstance(requireContext().applicationContext),
+            SharedPreferences(requireContext().applicationContext),
+            this
+        )
     }
 
     private lateinit var recyclerView: RecyclerView
@@ -40,8 +45,8 @@ class MainFragment : Fragment() {
             adapter = viewAdapter
         }
 
-        model.services.observe(viewLifecycleOwner) { services ->
-            viewAdapter.services = services
+        model.rows.observe(viewLifecycleOwner) { rows ->
+            viewAdapter.rows = rows
             viewAdapter.notifyDataSetChanged()
         }
 

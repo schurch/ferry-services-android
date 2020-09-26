@@ -5,6 +5,7 @@ import android.content.Context
 interface Preferences {
     fun lookupBool(key: Int) : Boolean
     fun lookupString(key: Int) : String?
+    fun writeString(key: Int, text: String)
 }
 
 class SharedPreferences(private val context: Context): Preferences {
@@ -18,5 +19,13 @@ class SharedPreferences(private val context: Context): Preferences {
     override fun lookupString(key: Int): String? {
         val key = context.resources.getString(key)
         return prefs.getString(key, null)
+    }
+
+    override fun writeString(key: Int, text: String) {
+        val key = context.resources.getString(key)
+        with (prefs.edit()) {
+            putString(key, text)
+            apply()
+        }
     }
 }

@@ -11,6 +11,9 @@ import com.stefanchurch.ferryservices.models.Service
 import com.stefanchurch.ferryservices.models.Status
 import com.stefanchurch.ferryservices.models.status
 import kotlinx.coroutines.launch
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.*
 
 class DetailViewModel(
@@ -28,13 +31,26 @@ class DetailViewModel(
 
     private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
 
+    init {
+        isSubscribed.value = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
+            Json.decodeFromString<List<Int>>(it).contains(service.serviceID)
+        } ?: false
+    }
+
     fun getSubscribedStatus() {
         if (installationID == null) return
 
         viewModelScope.launch {
             try {
                 val services = api.getSubscribedServices(installationID)
-                isSubscribed.value = services.map { it.serviceID }.contains(service.serviceID)
+                if (services.map { it.serviceID }.contains(service.serviceID)) {
+                    isSubscribed.value = true
+                    addSubscribedServiceToPrefs()
+                } else {
+                    isSubscribed.value = false
+                    removeSubscribedServiceFromPrefs()
+                }
+
                 isSubscribedEnabled.value = true
             }
             catch (e: Throwable) {
@@ -52,9 +68,11 @@ class DetailViewModel(
             try {
                 if (subscribed) {
                     api.addService(installationID , service.serviceID)
+                    addSubscribedServiceToPrefs()
                 }
                 else {
                     api.removeService(installationID , service.serviceID)
+                    removeSubscribedServiceFromPrefs()
                 }
 
                 isSubscribedEnabled.value = true
@@ -69,6 +87,28 @@ class DetailViewModel(
     fun navigateToAdditionalInfo() {
         val direction = DetailFragmentDirections.actionDetailFragmentToAdditional(service)
         navigateToAdditionalInfo?.invoke(direction)
+    }
+
+    private fun addSubscribedServiceToPrefs() {
+        preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
+            val serviceIDs: List<Int> = Json.decodeFromString(it)
+            if (!serviceIDs.contains(service.serviceID)) {
+                val updatedList = listOf(service.serviceID) + serviceIDs
+                preferences.writeString(R.string.preferences_subscribed_services_key, Json.encodeToString(updatedList))
+            }
+        } ?: run {
+            preferences.writeString(R.string.preferences_subscribed_services_key, Json.encodeToString(listOf(service.serviceID)))
+        }
+    }
+
+    private fun removeSubscribedServiceFromPrefs() {
+        preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
+            val serviceIDs  = Json.decodeFromString<List<Int>>(it).toMutableList()
+            if (serviceIDs.contains(service.serviceID)) {
+                serviceIDs.remove(service.serviceID)
+                preferences.writeString(R.string.preferences_subscribed_services_key, Json.encodeToString(serviceIDs))
+            }
+        }
     }
 }
 

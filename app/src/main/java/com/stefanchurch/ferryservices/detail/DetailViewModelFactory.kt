@@ -12,7 +12,7 @@ import com.stefanchurch.ferryservices.models.Service
 class DetailViewModelFactory(
     val service: Service,
     val api: API,
-    val preferences: Preferences,
+    private val preferences: Preferences,
     owner: SavedStateRegistryOwner,
     defaultArgs: Bundle? = null
 ) : AbstractSavedStateViewModelFactory(owner, defaultArgs) {
