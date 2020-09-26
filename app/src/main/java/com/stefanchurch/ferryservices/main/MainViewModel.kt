@@ -48,7 +48,7 @@ class MainViewModel(
         val subscribedServicesIDs = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let { Json.decodeFromString(it) as List<Int> } ?: listOf()
         val subscribedServices = subscribedServicesIDs.mapNotNull { services.find { service -> service.serviceID == it} }
         if (subscribedServices.count() > 0) {
-            rows.value = listOf(MainRow.HeaderRow("Subscribed services")) +
+            rows.value = listOf(MainRow.HeaderRow("Subscribed")) +
                     subscribedServices.map { MainRow.ServiceRow(it) } +
                     listOf(MainRow.HeaderRow("Services")) +
                     services.map { MainRow.ServiceRow(it) }
