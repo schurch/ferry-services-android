@@ -17,13 +17,13 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class API(private val context: Context) {
+class ServicesRepository(private val context: Context) {
 
     companion object {
-        @Volatile private var instance: API? = null
+        @Volatile private var instance: ServicesRepository? = null
         fun getInstance(context: Context) =
             instance ?: synchronized(this) {
-                instance ?: API(context).also { instance = it }
+                instance ?: ServicesRepository(context).also { instance = it }
             }
 
 //        private val baseURL = URL("http://10.0.2.2:3000")

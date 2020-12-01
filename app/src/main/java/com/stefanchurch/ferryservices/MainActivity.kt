@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
                 task.result?.token?.let {
                     val installationID = InstallationID.getInstallationID(applicationContext)
                     GlobalScope.launch {
-                        API.getInstance(applicationContext).updateInstallation(installationID, it)
+                        ServicesRepository.getInstance(applicationContext).updateInstallation(installationID, it)
                         val prefs = applicationContext.getSharedPreferences(applicationContext.getString(R.string.preferences_key), MODE_PRIVATE)
                         with(prefs.edit()) {
                             putBoolean(applicationContext.getString(R.string.preferences_created_installation_key), true)

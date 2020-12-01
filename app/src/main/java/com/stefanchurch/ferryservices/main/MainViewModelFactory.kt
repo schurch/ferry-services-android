@@ -5,11 +5,11 @@ import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.savedstate.SavedStateRegistryOwner
-import com.stefanchurch.ferryservices.API
+import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.Preferences
 
 class MainViewModelFactory(
-    private val api: API,
+    private val servicesRepository: ServicesRepository,
     private val preferences: Preferences,
     owner: SavedStateRegistryOwner,
     defaultArgs: Bundle? = null
@@ -20,7 +20,7 @@ class MainViewModelFactory(
         modelClass: Class<T>,
         handle: SavedStateHandle
     ): T {
-        return MainViewModel(api, preferences) as T
+        return MainViewModel(servicesRepository, preferences) as T
     }
 
 }

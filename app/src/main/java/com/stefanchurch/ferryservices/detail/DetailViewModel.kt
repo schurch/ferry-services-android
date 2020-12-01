@@ -4,7 +4,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavDirections
-import com.stefanchurch.ferryservices.API
+import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.Preferences
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.models.Service
@@ -17,17 +17,18 @@ import kotlinx.serialization.json.Json
 import java.util.*
 
 class DetailViewModel(
-    val service: Service,
-    val api: API,
-    private val preferences: Preferences,
-    val area: String = service.area,
-    val route: String = service.route,
-    val statusText: MutableLiveData<Int> = MutableLiveData(service.statusText),
-    val additionalInfoVisible: MutableLiveData<Boolean> = MutableLiveData<Boolean>(service.additionalInfo?.isNotEmpty()),
-    val isSubscribed: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false),
-    val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(preferences.lookupBool(R.string.preferences_created_installation_key)),
-    var navigateToAdditionalInfo: ((NavDirections) -> Unit)? = null
+    private val service: Service,
+    private val servicesRepository: ServicesRepository,
+    private val preferences: Preferences
 ) : ViewModel()  {
+
+    val area: String = service.area
+    val route: String = service.route
+    val statusText: MutableLiveData<Int> = MutableLiveData(service.statusText)
+    val additionalInfoVisible: MutableLiveData<Boolean> = MutableLiveData<Boolean>(service.additionalInfo?.isNotEmpty())
+    val isSubscribed: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
+    val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(preferences.lookupBool(R.string.preferences_created_installation_key))
+    var navigateToAdditionalInfo: ((NavDirections) -> Unit)? = null
 
     private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
 
@@ -42,7 +43,7 @@ class DetailViewModel(
 
         viewModelScope.launch {
             try {
-                val services = api.getSubscribedServices(installationID)
+                val services = servicesRepository.getSubscribedServices(installationID)
                 if (services.map { it.serviceID }.contains(service.serviceID)) {
                     isSubscribed.value = true
                     addSubscribedServiceToPrefs()
@@ -67,11 +68,11 @@ class DetailViewModel(
         viewModelScope.launch {
             try {
                 if (subscribed) {
-                    api.addService(installationID , service.serviceID)
+                    servicesRepository.addService(installationID , service.serviceID)
                     addSubscribedServiceToPrefs()
                 }
                 else {
-                    api.removeService(installationID , service.serviceID)
+                    servicesRepository.removeService(installationID , service.serviceID)
                     removeSubscribedServiceFromPrefs()
                 }
 

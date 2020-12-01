@@ -14,7 +14,7 @@ import java.lang.Exception
 private const val ITEM_TYPE_HEADER = 1
 private const val ITEM_TYPE_SERVICE = 2
 
-class ServicesAdapter(var rows: List<MainRow> = listOf()) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class ServicesAdapter(var rows: List<ServiceItem> = listOf()) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
@@ -30,15 +30,15 @@ class ServicesAdapter(var rows: List<MainRow> = listOf()) : RecyclerView.Adapter
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val row = rows[position]) {
-            is MainRow.HeaderRow -> (holder as HeaderViewHolder).bind(row.text)
-            is MainRow.ServiceRow -> (holder as ServiceViewHolder).bind(row.service)
+            is ServiceItem.ServiceItemHeader -> (holder as HeaderViewHolder).bind(row.text)
+            is ServiceItem.ServiceItemService -> (holder as ServiceViewHolder).bind(row.service)
         }
     }
 
     override fun getItemViewType(position: Int): Int {
         return when (rows[position]) {
-            is MainRow.HeaderRow -> ITEM_TYPE_HEADER
-            is MainRow.ServiceRow -> ITEM_TYPE_SERVICE
+            is ServiceItem.ServiceItemHeader -> ITEM_TYPE_HEADER
+            is ServiceItem.ServiceItemService -> ITEM_TYPE_SERVICE
         }
     }
 

@@ -10,7 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
-import com.stefanchurch.ferryservices.API
+import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.SharedPreferences
 import com.stefanchurch.ferryservices.databinding.DetailFragmentBinding
@@ -21,7 +21,7 @@ class DetailFragment : Fragment() {
     private val model: DetailViewModel by viewModels {
         DetailViewModelFactory(
             args.service,
-            API.getInstance(requireContext().applicationContext),
+            ServicesRepository.getInstance(requireContext().applicationContext),
             SharedPreferences(requireContext().applicationContext),
             this
         )
