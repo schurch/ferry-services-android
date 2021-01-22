@@ -16,10 +16,10 @@ data class Service(
     val area: String,
     val route: String,
     @SerialName("status") val statusValue: Int,
-    @SerialName("disruption_reason") val disruptionReason: String?,
-    @SerialName("last_updated_date") val lastUpdatedDate: String?,
-    val updated: String?,
-    @SerialName("additional_info") val additionalInfo: String?,
+    @SerialName("disruption_reason") val disruptionReason: String? = null,
+    @SerialName("last_updated_date") val lastUpdatedDate: String? = null,
+    val updated: String? = null,
+    @SerialName("additional_info") val additionalInfo: String? = null,
     val locations: Array<Location>
 ) : Parcelable {
     override fun equals(other: Any?): Boolean {

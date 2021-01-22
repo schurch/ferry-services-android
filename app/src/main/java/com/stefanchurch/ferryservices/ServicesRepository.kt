@@ -34,7 +34,8 @@ class ServicesRepository(private val context: Context) {
     suspend fun getService(serviceID: Int) = suspendCoroutine<Service> { cont ->
         val url = URL(baseURL, "/api/services/$serviceID")
         val request = StringRequest(Request.Method.GET, url.toString(), { response ->
-            val service = Json.decodeFromString<Service>(response)
+            val format = Json { ignoreUnknownKeys = true }
+            val service = format.decodeFromString<Service>(response)
             cont.resume(service)
         }, { error ->
             cont.resumeWithException(error)
@@ -45,7 +46,8 @@ class ServicesRepository(private val context: Context) {
     suspend fun getServices() = suspendCoroutine<Array<Service>> { cont ->
         val url = URL(baseURL, "/api/services")
         val request = StringRequest(Request.Method.GET, url.toString(), { response ->
-            val services = Json.decodeFromString<Array<Service>>(response)
+            val format = Json { ignoreUnknownKeys = true }
+            val services = format.decodeFromString<Array<Service>>(response)
             services.sortBy { it.sortOrder }
             cont.resume(services)
         }, { error ->
@@ -59,7 +61,8 @@ class ServicesRepository(private val context: Context) {
         val body = CreateInstallationBody(deviceToken)
 
         val request = object : StringRequest(Request.Method.POST, url.toString(), { response ->
-            val services = Json.decodeFromString<Array<Service>>(response)
+            val format = Json { ignoreUnknownKeys = true }
+            val services = format.decodeFromString<Array<Service>>(response)
             services.sortBy { it.sortOrder }
             cont.resume(services)
         }, { error ->
@@ -77,7 +80,8 @@ class ServicesRepository(private val context: Context) {
         val url = URL(baseURL, "/api/installations/$installationID/services")
 
         val request = StringRequest(Request.Method.GET, url.toString(), { response ->
-            val services = Json.decodeFromString<Array<Service>>(response)
+            val format = Json { ignoreUnknownKeys = true }
+            val services = format.decodeFromString<Array<Service>>(response)
             services.sortBy { it.sortOrder }
             cont.resume(services)
         }, { error ->
@@ -91,7 +95,8 @@ class ServicesRepository(private val context: Context) {
         val body = CreateInstallationServiceBody(serviceID)
 
         val request = object : StringRequest(Request.Method.POST, url.toString(), { response ->
-            val services = Json.decodeFromString<Array<Service>>(response)
+            val format = Json { ignoreUnknownKeys = true }
+            val services = format.decodeFromString<Array<Service>>(response)
             services.sortBy { it.sortOrder }
             cont.resume(services)
         }, { error ->
@@ -109,7 +114,8 @@ class ServicesRepository(private val context: Context) {
         val url = URL(baseURL, "/api/installations/$installationID/services/$serviceID")
 
         val request = StringRequest(Request.Method.DELETE, url.toString(), { response ->
-            val services = Json.decodeFromString<Array<Service>>(response)
+            val format = Json { ignoreUnknownKeys = true }
+            val services = format.decodeFromString<Array<Service>>(response)
             services.sortBy { it.sortOrder }
             cont.resume(services)
         }, { error ->
