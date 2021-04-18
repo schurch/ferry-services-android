@@ -38,7 +38,7 @@ class MainViewModel(
     }
 
     private fun updateServicesRows() {
-        val services = services?.let { it } ?: return
+        val services = services ?: return
 
         val subscribedServicesIDs = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let { Json.decodeFromString(it) as List<Int> } ?: listOf()
         val subscribedServices = subscribedServicesIDs.mapNotNull { services.find { service -> service.serviceID == it} }
