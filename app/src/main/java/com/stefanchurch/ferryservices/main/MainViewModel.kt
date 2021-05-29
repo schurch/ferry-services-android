@@ -23,26 +23,26 @@ class MainViewModel(
         MutableLiveData<List<ServiceItem>>()
     }
 
-    private val subscribedServicesIDs: List<Int> by lazy {
-        preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
-            Json.decodeFromString(it) as List<Int>
-        } ?: listOf()
-    }
-
     init {
-        rows.value = convertServicesToRows(subscribedServicesIDs, defaultServices)
+        rows.value = convertServicesToRows(getSubscribedServicesIDs(), defaultServices)
     }
 
     fun reloadServices() {
         viewModelScope.launch {
             try {
                 val services = servicesRepository.getServices()
-                rows.value = convertServicesToRows(subscribedServicesIDs, services)
+                rows.value = convertServicesToRows(getSubscribedServicesIDs(), services)
             }
             catch (e: Throwable) {
                 showError?.invoke("There was a problem updating the services. Please try again later.")
             }
         }
+    }
+
+    private fun getSubscribedServicesIDs() : List<Int> {
+        return preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
+            Json.decodeFromString(it) as List<Int>
+        } ?: listOf()
     }
 
 }
