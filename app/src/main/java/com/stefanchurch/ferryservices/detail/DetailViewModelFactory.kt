@@ -10,7 +10,7 @@ import com.stefanchurch.ferryservices.Preferences
 import com.stefanchurch.ferryservices.models.Service
 
 class DetailViewModelFactory(
-    private val service: Service,
+    private val serviceDetailArgument: ServiceDetailArgument,
     private val servicesRepository: ServicesRepository,
     private val preferences: Preferences,
     owner: SavedStateRegistryOwner,
@@ -22,7 +22,7 @@ class DetailViewModelFactory(
         modelClass: Class<T>,
         handle: SavedStateHandle
     ): T {
-        return DetailViewModel(service, servicesRepository, preferences) as T
+        return DetailViewModel(serviceDetailArgument, servicesRepository, preferences) as T
     }
 
 }

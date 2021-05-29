@@ -13,11 +13,19 @@ import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.SharedPreferences
 import com.stefanchurch.ferryservices.databinding.MainFragmentBinding
+import com.stefanchurch.ferryservices.models.Service
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 class MainFragment : Fragment() {
 
     private val model: MainViewModel by viewModels {
+        val json = resources.assets.open("services.json").bufferedReader().use { it.readText() }
+        val format = Json { ignoreUnknownKeys = true }
+        val defaultServices = format.decodeFromString<Array<Service>>(json)
+
         MainViewModelFactory(
+            defaultServices,
             ServicesRepository.getInstance(requireContext().applicationContext),
             SharedPreferences(requireContext().applicationContext),
             this

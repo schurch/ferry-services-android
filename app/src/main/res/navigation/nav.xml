@@ -11,7 +11,7 @@
         android:label="Services"
         tools:layout="@layout/main_fragment" >
         <action
-            android:id="@+id/action_mainFragment_to_placeholder"
+            android:id="@+id/action_mainFragment_to_serviceDetail"
             app:destination="@id/detailFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
@@ -30,8 +30,8 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <argument
-            android:name="service"
-            app:argType="com.stefanchurch.ferryservices.models.Service" />
+            android:name="serviceDetailArgument"
+            app:argType="com.stefanchurch.ferryservices.detail.ServiceDetailArgument" />
     </fragment>
     <fragment
         android:id="@+id/additionalFragment"

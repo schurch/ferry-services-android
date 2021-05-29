@@ -26,9 +26,9 @@ class ServicesRepository(private val context: Context) {
                 instance ?: ServicesRepository(context).also { instance = it }
             }
 
-//        private val baseURL = URL("http://10.0.2.2:3000")
+//        private val baseURL = URL("http://10.0.2.2:3001")
         private val baseURL = URL("https://scottishferryapp.com")
-//        private val baseURL = URL("http://192.168.86.249:3000")
+//        private val baseURL = URL("http://192.168.86.232:3001")
     }
 
     suspend fun getService(serviceID: Int) = suspendCoroutine<Service> { cont ->

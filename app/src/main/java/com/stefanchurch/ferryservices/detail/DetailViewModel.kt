@@ -17,24 +17,37 @@ import kotlinx.serialization.json.Json
 import java.util.*
 
 class DetailViewModel(
-    private val service: Service,
+    serviceDetailArgument: ServiceDetailArgument,
     private val servicesRepository: ServicesRepository,
     private val preferences: Preferences
 ) : ViewModel()  {
 
-    val area: String = service.area
-    val route: String = service.route
-    val statusText: MutableLiveData<Int> = MutableLiveData(service.statusText)
-    val additionalInfoVisible: MutableLiveData<Boolean> = MutableLiveData<Boolean>(service.additionalInfo?.isNotEmpty())
+    val area: MutableLiveData<String> = MutableLiveData("")
+    val route: MutableLiveData<String> = MutableLiveData("")
+    val statusText: MutableLiveData<Int> = MutableLiveData(R.string.empty)
+    val additionalInfoVisible: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
     val isSubscribed: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
-    val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(preferences.lookupBool(R.string.preferences_created_installation_key))
+    val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
     var navigateToAdditionalInfo: ((NavDirections) -> Unit)? = null
+    var setColor: ((Service) -> Unit)? = null
 
+    private val serviceID: Int = serviceDetailArgument.serviceID
     private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
+    private var service: Service? = null
 
     init {
+        if (serviceDetailArgument.service != null) {
+            service = serviceDetailArgument.service
+            configureView()
+        } else {
+            viewModelScope.launch {
+                service = servicesRepository.getService(serviceID)
+                configureView()
+            }
+        }
+
         isSubscribed.value = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
-            Json.decodeFromString<List<Int>>(it).contains(service.serviceID)
+            Json.decodeFromString<List<Int>>(it).contains(serviceID)
         } ?: false
     }
 
@@ -44,7 +57,7 @@ class DetailViewModel(
         viewModelScope.launch {
             try {
                 val services = servicesRepository.getSubscribedServices(installationID)
-                if (services.map { it.serviceID }.contains(service.serviceID)) {
+                if (services.map { it.serviceID }.contains(serviceID)) {
                     isSubscribed.value = true
                     addSubscribedServiceToPrefs()
                 } else {
@@ -68,11 +81,11 @@ class DetailViewModel(
         viewModelScope.launch {
             try {
                 if (subscribed) {
-                    servicesRepository.addService(installationID , service.serviceID)
+                    servicesRepository.addService(installationID , serviceID)
                     addSubscribedServiceToPrefs()
                 }
                 else {
-                    servicesRepository.removeService(installationID , service.serviceID)
+                    servicesRepository.removeService(installationID , serviceID)
                     removeSubscribedServiceFromPrefs()
                 }
 
@@ -86,27 +99,39 @@ class DetailViewModel(
     }
 
     fun navigateToAdditionalInfo() {
+        val service = service?.let { it } ?: return
+
         val direction = DetailFragmentDirections.actionDetailFragmentToAdditional(service)
         navigateToAdditionalInfo?.invoke(direction)
+    }
+
+    fun configureView() {
+        val service = service?.let { it } ?: return
+
+        area.value = service.area
+        route.value = service.route
+        statusText.value = service.statusText
+        additionalInfoVisible.value = service.additionalInfo?.isNotEmpty()
+        setColor?.invoke(service)
     }
 
     private fun addSubscribedServiceToPrefs() {
         preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
             val serviceIDs: List<Int> = Json.decodeFromString(it)
-            if (!serviceIDs.contains(service.serviceID)) {
-                val updatedList = listOf(service.serviceID) + serviceIDs
+            if (!serviceIDs.contains(serviceID)) {
+                val updatedList = listOf(serviceID) + serviceIDs
                 preferences.writeString(R.string.preferences_subscribed_services_key, Json.encodeToString(updatedList))
             }
         } ?: run {
-            preferences.writeString(R.string.preferences_subscribed_services_key, Json.encodeToString(listOf(service.serviceID)))
+            preferences.writeString(R.string.preferences_subscribed_services_key, Json.encodeToString(listOf(serviceID)))
         }
     }
 
     private fun removeSubscribedServiceFromPrefs() {
         preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
             val serviceIDs  = Json.decodeFromString<List<Int>>(it).toMutableList()
-            if (serviceIDs.contains(service.serviceID)) {
-                serviceIDs.remove(service.serviceID)
+            if (serviceIDs.contains(serviceID)) {
+                serviceIDs.remove(serviceID)
                 preferences.writeString(R.string.preferences_subscribed_services_key, Json.encodeToString(serviceIDs))
             }
         }

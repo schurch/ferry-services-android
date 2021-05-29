@@ -20,7 +20,7 @@ class DetailFragment : Fragment() {
 
     private val model: DetailViewModel by viewModels {
         DetailViewModelFactory(
-            args.service,
+            args.serviceDetailArgument,
             ServicesRepository.getInstance(requireContext().applicationContext),
             SharedPreferences(requireContext().applicationContext),
             this
@@ -34,9 +34,6 @@ class DetailFragment : Fragment() {
 
         binding.model = model
         binding.lifecycleOwner = viewLifecycleOwner
-
-        binding.statusView.background.setColorFilter(args.service.statusColor(binding.root.context), PorterDuff.Mode.SRC_ATOP)
-
         binding.subscribeSwitch.setOnCheckedChangeListener { _, isChecked ->
             model.updatedSubscribedStatus(isChecked)
         }
@@ -44,6 +41,12 @@ class DetailFragment : Fragment() {
         model.navigateToAdditionalInfo = { direction ->
             view?.findNavController()?.navigate(direction)
         }
+
+        model.setColor = { service ->
+            binding.statusView.background.setColorFilter(service.statusColor(binding.root.context), PorterDuff.Mode.SRC_ATOP)
+        }
+
+        model.configureView()
 
         return binding.root
     }

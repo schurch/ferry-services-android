@@ -7,6 +7,7 @@ import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanchurch.ferryservices.databinding.ServiceItemBinding
 import com.stefanchurch.ferryservices.databinding.ServiceItemHeaderBinding
+import com.stefanchurch.ferryservices.detail.ServiceDetailArgument
 import com.stefanchurch.ferryservices.models.Service
 import com.stefanchurch.ferryservices.models.statusColor
 import java.lang.Exception
@@ -49,7 +50,7 @@ private class ServiceViewHolder(private val binding: ServiceItemBinding) : Recyc
     init {
         binding.setClickListener { view ->
             binding.service?.let { service ->
-                val direction = MainFragmentDirections.actionMainFragmentToPlaceholder(service)
+                val direction = MainFragmentDirections.actionMainFragmentToServiceDetail(ServiceDetailArgument(service.serviceID, service))
                 view.findNavController().navigate(direction)
             }
         }

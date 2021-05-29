@@ -12,24 +12,32 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 class MainViewModel(
+    defaultServices: Array<Service>,
     private val servicesRepository: ServicesRepository,
     private val preferences: Preferences,
-    var showError: ((String) -> Unit)? = null
 ) : ViewModel() {
+
+    var showError: ((String) -> Unit)? = null
 
     val rows: MutableLiveData<List<ServiceItem>> by lazy {
         MutableLiveData<List<ServiceItem>>()
     }
 
-    private var services: Array<Service>? = null
+    private val subscribedServicesIDs: List<Int> by lazy {
+        preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
+            Json.decodeFromString(it) as List<Int>
+        } ?: listOf()
+    }
+
+    init {
+        rows.value = convertServicesToRows(subscribedServicesIDs, defaultServices)
+    }
 
     fun reloadServices() {
         viewModelScope.launch {
             try {
-                // If we have a list of services already, then update service rows before API call if we've subscribed or unsubscribed
-                updateServicesRows()
-                services = servicesRepository.getServices()
-                updateServicesRows()
+                val services = servicesRepository.getServices()
+                rows.value = convertServicesToRows(subscribedServicesIDs, services)
             }
             catch (e: Throwable) {
                 showError?.invoke("There was a problem updating the services. Please try again later.")
@@ -37,19 +45,16 @@ class MainViewModel(
         }
     }
 
-    private fun updateServicesRows() {
-        val services = services ?: return
+}
 
-        val subscribedServicesIDs = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let { Json.decodeFromString(it) as List<Int> } ?: listOf()
-        val subscribedServices = subscribedServicesIDs.mapNotNull { services.find { service -> service.serviceID == it} }
-        if (subscribedServices.isNotEmpty()) {
-            rows.value = listOf(ServiceItem.ServiceItemHeader("Subscribed")) +
-                    subscribedServices.map { ServiceItem.ServiceItemService(it) } +
-                    listOf(ServiceItem.ServiceItemHeader("Services")) +
-                    services.map { ServiceItem.ServiceItemService(it) }
-        } else {
-            rows.value = services.map { ServiceItem.ServiceItemService(it) }
-        }
+private fun convertServicesToRows(subscribedServiceIDs: List<Int>, services: Array<Service>) : List<ServiceItem> {
+    val subscribedServices = subscribedServiceIDs.mapNotNull { services.find { service -> service.serviceID == it} }
+    return if (subscribedServices.isNotEmpty()) {
+        listOf(ServiceItem.ServiceItemHeader("Subscribed")) +
+                subscribedServices.map { ServiceItem.ServiceItemService(it) } +
+                listOf(ServiceItem.ServiceItemHeader("Services")) +
+                services.map { ServiceItem.ServiceItemService(it) }
+    } else {
+        services.map { ServiceItem.ServiceItemService(it) }
     }
-
 }
