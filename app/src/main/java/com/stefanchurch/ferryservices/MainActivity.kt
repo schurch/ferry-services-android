@@ -28,20 +28,41 @@ class MainActivity : AppCompatActivity() {
 
         setContentView<MainActivityBinding>(this, R.layout.main_activity)
 
-        val navController = (supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment).navController
+        val navController =
+            (supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment).navController
         val appBarConfiguration = AppBarConfiguration(navController.graph)
-        NavigationUI.setupWithNavController(findViewById(R.id.toolbar), navController, appBarConfiguration)
+        NavigationUI.setupWithNavController(
+            findViewById(R.id.toolbar),
+            navController,
+            appBarConfiguration
+        )
 
         FirebaseInstanceId.getInstance().instanceId
             .addOnCompleteListener(OnCompleteListener { task ->
                 task.result?.token?.let {
-                    val installationID = InstallationID.getInstallationID(applicationContext)
                     GlobalScope.launch {
-                        ServicesRepository.getInstance(applicationContext).updateInstallation(installationID, it)
-                        val prefs = applicationContext.getSharedPreferences(applicationContext.getString(R.string.preferences_key), MODE_PRIVATE)
-                        with(prefs.edit()) {
-                            putBoolean(applicationContext.getString(R.string.preferences_created_installation_key), true)
-                            apply()
+                        try {
+                            val installationID =
+                                InstallationID.getInstallationID(applicationContext)
+
+                            ServicesRepository
+                                .getInstance(applicationContext)
+                                .updateInstallation(installationID, it)
+
+                            val prefs = applicationContext.getSharedPreferences(
+                                applicationContext.getString(R.string.preferences_key),
+                                MODE_PRIVATE
+                            )
+
+                            with(prefs.edit()) {
+                                putBoolean(
+                                    applicationContext.getString(R.string.preferences_created_installation_key),
+                                    true
+                                )
+                                apply()
+                            }
+                        } catch (exception: Throwable) {
+                            // Ignore any errors and let the application continue
                         }
                     }
                 }
@@ -54,5 +75,5 @@ class MainActivity : AppCompatActivity() {
             navController.navigate(direction)
         }
     }
-    
+
 }
