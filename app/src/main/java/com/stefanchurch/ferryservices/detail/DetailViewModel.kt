@@ -28,12 +28,16 @@ class DetailViewModel(
     val additionalInfoVisible: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
     val isSubscribed: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
     val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
+
     var navigateToAdditionalInfo: ((NavDirections) -> Unit)? = null
     var setColor: ((Service) -> Unit)? = null
+    var configureMap: ((Service) -> Unit)? = null
 
     private val serviceID: Int = serviceDetailArgument.serviceID
     private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
-    private var service: Service? = null
+
+    var service: Service? = null
+        private set
 
     init {
         if (serviceDetailArgument.service != null) {
@@ -113,6 +117,7 @@ class DetailViewModel(
         statusText.value = service.statusText
         additionalInfoVisible.value = service.additionalInfo?.isNotEmpty()
         setColor?.invoke(service)
+        configureMap?.invoke(service)
     }
 
     private fun addSubscribedServiceToPrefs() {
