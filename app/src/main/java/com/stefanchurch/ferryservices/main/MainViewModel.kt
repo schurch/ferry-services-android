@@ -48,7 +48,10 @@ class MainViewModel(
 }
 
 private fun convertServicesToRows(subscribedServiceIDs: List<Int>, services: Array<Service>) : List<ServiceItem> {
-    val subscribedServices = subscribedServiceIDs.mapNotNull { services.find { service -> service.serviceID == it} }
+    val subscribedServices = subscribedServiceIDs
+        .mapNotNull { services.find { service -> service.serviceID == it} }
+        .sortedBy { it.sortOrder }
+
     return if (subscribedServices.isNotEmpty()) {
         listOf(ServiceItem.ServiceItemHeader("Subscribed")) +
                 subscribedServices.map { ServiceItem.ServiceItemService(it) } +
