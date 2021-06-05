@@ -29,7 +29,7 @@ class DetailViewModel(
     val isSubscribed: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
     val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
 
-    var navigateToAdditionalInfo: ((NavDirections) -> Unit)? = null
+    var navigateToWithDirection: ((NavDirections) -> Unit)? = null
     var setColor: ((Service) -> Unit)? = null
     var configureMap: ((Service) -> Unit)? = null
 
@@ -106,7 +106,14 @@ class DetailViewModel(
         val service = service?.let { it } ?: return
 
         val direction = DetailFragmentDirections.actionDetailFragmentToAdditional(service)
-        navigateToAdditionalInfo?.invoke(direction)
+        navigateToWithDirection?.invoke(direction)
+    }
+
+    fun navigateToMap() {
+        val service = service?.let { it } ?: return
+
+        val direction = DetailFragmentDirections.actionDetailFragmentToMap(service, service.route)
+        navigateToWithDirection?.invoke(direction)
     }
 
     fun configureView() {

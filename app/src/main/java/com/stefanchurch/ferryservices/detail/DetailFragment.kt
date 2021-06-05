@@ -35,9 +35,7 @@ class DetailFragment : Fragment() {
     }
 
     private val args: DetailFragmentArgs by navArgs()
-
-    private lateinit var mapView: MapView
-
+    private var mapView: MapView? = null
     private var map: GoogleMap? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -49,7 +47,7 @@ class DetailFragment : Fragment() {
             model.updatedSubscribedStatus(isChecked)
         }
 
-        model.navigateToAdditionalInfo = { direction ->
+        model.navigateToWithDirection = { direction ->
             view?.findNavController()?.navigate(direction)
         }
 
@@ -62,8 +60,8 @@ class DetailFragment : Fragment() {
         }
 
         mapView = binding.mapView
-        mapView.onCreate(null)
-        mapView.getMapAsync {
+        mapView?.onCreate(null)
+        mapView?.getMapAsync {
             map = it
             model.service?.let { service ->
                 configureMap(service)
@@ -103,25 +101,25 @@ class DetailFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        mapView.onResume()
+        mapView?.onResume()
         model.getSubscribedStatus()
     }
 
     override fun onPause() {
         super.onPause()
 
-        mapView.onPause()
+        mapView?.onPause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
-        mapView.onDestroy()
+        mapView?.onDestroy()
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
 
-        mapView.onLowMemory()
+        mapView?.onLowMemory()
     }
 }

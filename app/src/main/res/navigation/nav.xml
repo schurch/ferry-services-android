@@ -29,6 +29,13 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_detailFragment_to_map"
+            app:destination="@id/mapFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
         <argument
             android:name="serviceDetailArgument"
             app:argType="com.stefanchurch.ferryservices.detail.ServiceDetailArgument" />
@@ -40,5 +47,16 @@
         <argument
             android:name="service"
             app:argType="com.stefanchurch.ferryservices.models.Service" />
+    </fragment>
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.stefanchurch.ferryservices.map.MapFragment"
+        android:label="{title}" >
+        <argument
+            android:name="service"
+            app:argType="com.stefanchurch.ferryservices.models.Service" />
+        <argument
+            android:name="title"
+            app:argType="string" />
     </fragment>
 </navigation>

@@ -27,11 +27,21 @@
                     android:layout_height="match_parent"
                     android:orientation="vertical">
 
-                    <com.google.android.gms.maps.MapView
-                        android:id="@+id/mapView"
+                    <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
-                        android:layout_height="180dp"
-                        map:liteMode="true" />
+                        android:layout_height="180dp" >
+                        <com.google.android.gms.maps.MapView
+                            android:id="@+id/mapView"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            map:liteMode="true" />
+                        <Button
+                            android:id="@+id/mapViewButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@android:color/transparent"
+                            android:onClick="@{() -> model.navigateToMap()}" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <TextView
                         android:id="@+id/areaTextView"
