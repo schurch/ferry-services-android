@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.SharedPreferences
@@ -33,6 +34,7 @@ class MainFragment : Fragment() {
     }
 
     private lateinit var recyclerView: RecyclerView
+    private lateinit var refreshLayout: SwipeRefreshLayout
     private lateinit var viewAdapter: ServicesAdapter
     private lateinit var viewManager: LinearLayoutManager
 
@@ -53,7 +55,13 @@ class MainFragment : Fragment() {
             adapter = viewAdapter
         }
 
+        refreshLayout = binding.swiperefresh
+        refreshLayout.setOnRefreshListener {
+            model.reloadServices()
+        }
+
         model.rows.observe(viewLifecycleOwner) { rows ->
+            refreshLayout.isRefreshing = false
             viewAdapter.rows = rows
             viewAdapter.notifyDataSetChanged()
         }
