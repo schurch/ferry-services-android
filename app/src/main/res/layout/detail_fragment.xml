@@ -88,8 +88,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
+                        android:backgroundTint="@color/colorAccent"
                         android:onClick="@{() -> model.navigateToAdditionalInfo()}"
                         android:text="@string/additional_info"
+                        android:textColor="#FFFFFF"
                         android:visibility="@{model.additionalInfoVisible ? View.VISIBLE : View.GONE}" />
                 </LinearLayout>
 

@@ -76,7 +76,12 @@ class DetailFragment : Fragment() {
     }
 
     private fun configureMap(service: Service) {
+        if (service.locations.count() == 0) return
+
         val map = map?.let { it } ?: return
+
+        map.uiSettings.setAllGesturesEnabled(false)
+        map.setOnMarkerClickListener { true }
 
         val markers = service.locations.map { location ->
             MarkerOptions()
