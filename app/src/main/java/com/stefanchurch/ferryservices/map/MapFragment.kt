@@ -14,6 +14,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 import com.stefanchurch.ferryservices.databinding.MapFragmentBinding
+import io.sentry.Sentry
 
 class MapFragment : Fragment() {
 
@@ -43,9 +44,13 @@ class MapFragment : Fragment() {
                 builder.include(it.position)
             }
 
-            map.moveCamera(
-                CameraUpdateFactory.newLatLngBounds(builder.build(), 200)
-            )
+            try {
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngBounds(builder.build(), 90)
+                )
+            } catch (exception: Throwable) {
+                Sentry.captureException(exception)
+            }
         }
         return binding.root
     }

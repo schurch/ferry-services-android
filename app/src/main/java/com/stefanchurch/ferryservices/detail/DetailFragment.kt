@@ -22,6 +22,7 @@ import com.stefanchurch.ferryservices.SharedPreferences
 import com.stefanchurch.ferryservices.databinding.DetailFragmentBinding
 import com.stefanchurch.ferryservices.models.Service
 import com.stefanchurch.ferryservices.models.statusColor
+import io.sentry.Sentry
 
 class DetailFragment : Fragment() {
 
@@ -93,9 +94,13 @@ class DetailFragment : Fragment() {
             builder.include(it.position)
         }
 
-        map.moveCamera(
-            CameraUpdateFactory.newLatLngBounds(builder.build(), 150)
-        )
+        try {
+            map.moveCamera(
+                CameraUpdateFactory.newLatLngBounds(builder.build(), 90)
+            )
+        } catch (exception: Throwable) {
+            Sentry.captureException(exception)
+        }
     }
 
     override fun onResume() {
