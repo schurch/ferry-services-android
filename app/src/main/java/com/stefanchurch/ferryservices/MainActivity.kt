@@ -39,6 +39,10 @@ class MainActivity : AppCompatActivity() {
 
         FirebaseInstanceId.getInstance().instanceId
             .addOnCompleteListener(OnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    return@OnCompleteListener
+                }
+
                 task.result?.token?.let {
                     GlobalScope.launch {
                         try {
