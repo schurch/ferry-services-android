@@ -1,25 +1,18 @@
 package com.stefanchurch.ferryservices
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil.setContentView
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.installations.FirebaseInstallations
 import com.stefanchurch.ferryservices.databinding.MainActivityBinding
 import com.stefanchurch.ferryservices.detail.ServiceDetailArgument
 import com.stefanchurch.ferryservices.main.MainFragmentDirections
-import com.stefanchurch.ferryservices.models.Location
-import com.stefanchurch.ferryservices.models.Service
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,7 +30,8 @@ class MainActivity : AppCompatActivity() {
             appBarConfiguration
         )
 
-        FirebaseInstanceId.getInstance().instanceId
+
+        FirebaseInstallations.getInstance().getToken(true)
             .addOnCompleteListener(OnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     return@OnCompleteListener

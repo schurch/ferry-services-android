@@ -54,12 +54,6 @@ class ServicesRepository(private val context: Context) {
     }
 
     suspend fun updateInstallation(installationID: UUID, deviceToken: String) = suspendCoroutine<Array<Service>> { cont ->
-        @Serializable
-        data class CreateInstallationBody(
-            @SerialName("device_token") val deviceToken: String,
-            @SerialName("device_type") val deviceType: String = "Android",
-        )
-
         val url = URL(baseURL, "/api/installations/$installationID")
         val body = CreateInstallationBody(deviceToken)
 
@@ -88,11 +82,6 @@ class ServicesRepository(private val context: Context) {
     }
 
     suspend fun addService(installationID: UUID, serviceID: Int) = suspendCoroutine<Array<Service>> { cont ->
-        @Serializable
-        data class CreateInstallationServiceBody(
-            @SerialName("service_id") val serviceID: Int,
-        )
-        
         val url = URL(baseURL, "/api/installations/$installationID/services")
         val body = CreateInstallationServiceBody(serviceID)
 
@@ -138,3 +127,14 @@ private fun responseToServices(response: String) : Array<Service> {
 
     return services.toTypedArray()
 }
+
+@Serializable
+private data class CreateInstallationBody(
+    @SerialName("device_token") val deviceToken: String,
+    @SerialName("device_type") val deviceType: String = "Android",
+)
+
+@Serializable
+private data class CreateInstallationServiceBody(
+    @SerialName("service_id") val serviceID: Int,
+)
