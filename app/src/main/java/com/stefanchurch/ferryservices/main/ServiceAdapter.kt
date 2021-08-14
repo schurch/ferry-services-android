@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
+import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.databinding.ServiceItemBinding
 import com.stefanchurch.ferryservices.databinding.ServiceItemHeaderBinding
 import com.stefanchurch.ferryservices.detail.ServiceDetailArgument
@@ -50,8 +51,11 @@ private class ServiceViewHolder(private val binding: ServiceItemBinding) : Recyc
     init {
         binding.setClickListener { view ->
             binding.service?.let { service ->
-                val direction = MainFragmentDirections.actionMainFragmentToServiceDetail(ServiceDetailArgument(service.serviceID, service))
-                view.findNavController().navigate(direction)
+                val navController = view.findNavController()
+                if (navController.currentDestination?.id == R.id.mainFragment) {
+                    val direction = MainFragmentDirections.actionMainFragmentToServiceDetail(ServiceDetailArgument(service.serviceID, service))
+                    navController.navigate(direction)
+                }
             }
         }
     }

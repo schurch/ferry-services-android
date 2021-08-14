@@ -67,10 +67,12 @@ class MainActivity : AppCompatActivity() {
             })
 
         intent.extras?.getString("service_id")?.let {
-            val direction = MainFragmentDirections.actionMainFragmentToServiceDetail(
-                ServiceDetailArgument(it.toInt(), null)
-            )
-            navController.navigate(direction)
+            if (navController.currentDestination?.id == R.id.mainFragment) {
+                val direction = MainFragmentDirections.actionMainFragmentToServiceDetail(
+                    ServiceDetailArgument(it.toInt(), null)
+                )
+                navController.navigate(direction)
+            }
         }
     }
 

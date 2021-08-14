@@ -49,7 +49,10 @@ class DetailFragment : Fragment() {
         }
 
         model.navigateToWithDirection = { direction ->
-            view?.findNavController()?.navigate(direction)
+            val navController = view?.findNavController()
+            if (navController?.currentDestination?.id == R.id.detailFragment) {
+                navController?.navigate(direction)
+            }
         }
 
         model.setColor = { service ->
