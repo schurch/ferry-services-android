@@ -1,15 +1,14 @@
 package com.stefanchurch.ferryservices.detail
 
-import androidx.lifecycle.MutableLiveData
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavDirections
 import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.Preferences
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.models.Service
-import com.stefanchurch.ferryservices.models.Status
-import com.stefanchurch.ferryservices.models.status
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -22,110 +21,68 @@ class DetailViewModel(
     private val preferences: Preferences
 ) : ViewModel()  {
 
-    val area: MutableLiveData<String> = MutableLiveData("")
-    val route: MutableLiveData<String> = MutableLiveData("")
-    val statusText: MutableLiveData<Int> = MutableLiveData(R.string.empty)
-    val additionalInfoVisible: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
-    val isSubscribed: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
-    val isSubscribedEnabled: MutableLiveData<Boolean> = MutableLiveData<Boolean>(false)
+    private val _service: MutableState<Service?> = mutableStateOf(null)
+    val service: State<Service?>
+        get() = _service
 
-    var navigateToWithDirection: ((NavDirections) -> Unit)? = null
-    var setColor: ((Service) -> Unit)? = null
-    var configureMap: ((Service) -> Unit)? = null
+    private val _subscribedEnabled = mutableStateOf(true)
+    val subscribedEnabled: State<Boolean>
+        get() = _subscribedEnabled
+
+    private val _isSubscribed = mutableStateOf(false)
+    val isSubscribed: State<Boolean>
+        get() = _isSubscribed
 
     private val serviceID: Int = serviceDetailArgument.serviceID
     private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
 
-    var service: Service? = null
-        private set
-
     init {
         if (serviceDetailArgument.service != null) {
-            service = serviceDetailArgument.service
-            configureView()
+            _service.value = serviceDetailArgument.service
         } else {
             viewModelScope.launch {
-                service = servicesRepository.getService(serviceID)
-                configureView()
+                _service.value = servicesRepository.getService(serviceID)
             }
         }
 
-        isSubscribed.value = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
+        _isSubscribed.value = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
             Json.decodeFromString<List<Int>>(it).contains(serviceID)
         } ?: false
-    }
-
-    fun getSubscribedStatus() {
-        if (installationID == null) return
-
-        viewModelScope.launch {
-            try {
-                val services = servicesRepository.getSubscribedServices(installationID)
-                if (services.map { it.serviceID }.contains(serviceID)) {
-                    isSubscribed.value = true
-                    addSubscribedServiceToPrefs()
-                } else {
-                    isSubscribed.value = false
-                    removeSubscribedServiceFromPrefs()
-                }
-
-                isSubscribedEnabled.value = true
-            }
-            catch (e: Throwable) {
-
-            }
-        }
     }
 
     fun updatedSubscribedStatus(subscribed: Boolean) {
         if (installationID == null) return
 
-        isSubscribedEnabled.value = false
+        _subscribedEnabled.value = false
 
         viewModelScope.launch {
             try {
                 if (subscribed) {
                     servicesRepository.addService(installationID , serviceID)
+                    _isSubscribed.value = true
                     addSubscribedServiceToPrefs()
                 }
                 else {
                     servicesRepository.removeService(installationID , serviceID)
+                    _isSubscribed.value = false
                     removeSubscribedServiceFromPrefs()
                 }
 
-                isSubscribedEnabled.value = true
+                _subscribedEnabled.value = true
             }
             catch (e: Throwable) {
-                isSubscribed.value = !subscribed
-                isSubscribedEnabled.value = true
+                _isSubscribed.value = !subscribed
+                _subscribedEnabled.value = true
             }
         }
     }
 
-    fun navigateToAdditionalInfo() {
-        val service = service?.let { it } ?: return
-
-        val direction = DetailFragmentDirections.actionDetailFragmentToAdditional(service)
-        navigateToWithDirection?.invoke(direction)
-    }
-
-    fun navigateToMap() {
-        val service = service?.let { it } ?: return
-
-        val direction = DetailFragmentDirections.actionDetailFragmentToMap(service, service.route)
-        navigateToWithDirection?.invoke(direction)
-    }
-
-    fun configureView() {
-        val service = service?.let { it } ?: return
-
-        area.value = service.area
-        route.value = service.route
-        statusText.value = service.statusText
-        additionalInfoVisible.value = service.additionalInfo?.isNotEmpty()
-        setColor?.invoke(service)
-        configureMap?.invoke(service)
-    }
+//    fun navigateToMap() {
+//        val service = service?.let { it } ?: return
+//
+//        val direction = DetailFragmentDirections.actionDetailFragmentToMap(service, service.route)
+//        navigateToWithDirection?.invoke(direction)
+//    }
 
     private fun addSubscribedServiceToPrefs() {
         preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
@@ -149,11 +106,3 @@ class DetailViewModel(
         }
     }
 }
-
-private val Service.statusText: Int
-    get() = when (status) {
-        Status.NORMAL -> R.string.status_normal
-        Status.DISRUPTED -> R.string.status_disrupted
-        Status.CANCELLED -> R.string.status_cancelled
-        Status.UNKNOWN -> R.string.status_unknown
-    }
