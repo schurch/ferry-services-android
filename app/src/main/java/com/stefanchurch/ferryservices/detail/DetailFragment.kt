@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
@@ -40,6 +38,7 @@ import com.stefanchurch.ferryservices.rememberMapViewWithLifecycle
 import com.google.maps.android.ktx.awaitMap
 import com.stefanchurch.ferryservices.models.Location
 import io.sentry.Sentry
+import kotlin.math.min
 
 class DetailFragment : Fragment() {
 
@@ -79,7 +78,12 @@ class DetailFragment : Fragment() {
         )
     ) {
         viewModel.service.value?.let { service ->
-            Column(modifier = Modifier.padding(all = 20.dp)) {
+            Column(
+                modifier =
+                Modifier
+                    .padding(all = 20.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Box(Modifier.height(200.dp).fillMaxWidth()) {
                     LocationsMapView(
                         locations = service.locations,
@@ -181,7 +185,17 @@ class DetailFragment : Fragment() {
                 }
             }
         } ?: run {
-            Text(text = "Loading...")
+            Column(
+                modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Loading...",
+                    fontSize = 18.sp,
+                    color = Color.Gray
+                )
+            }
         }
     }
 
@@ -228,8 +242,11 @@ class DetailFragment : Fragment() {
             }
 
             try {
+                val width = resources.displayMetrics.widthPixels
+                val height = resources.displayMetrics.heightPixels
+                val padding = min(width, height) * 0.15
                 googleMap.moveCamera(
-                    CameraUpdateFactory.newLatLngBounds(mapBounds, 90)
+                    CameraUpdateFactory.newLatLngBounds(mapBounds, padding.toInt())
                 )
             } catch (exception: Throwable) {
                 Sentry.captureException(exception)
