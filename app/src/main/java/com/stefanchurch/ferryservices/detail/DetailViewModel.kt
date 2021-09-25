@@ -77,13 +77,6 @@ class DetailViewModel(
         }
     }
 
-//    fun navigateToMap() {
-//        val service = service?.let { it } ?: return
-//
-//        val direction = DetailFragmentDirections.actionDetailFragmentToMap(service, service.route)
-//        navigateToWithDirection?.invoke(direction)
-//    }
-
     private fun addSubscribedServiceToPrefs() {
         preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
             val serviceIDs: List<Int> = Json.decodeFromString(it)

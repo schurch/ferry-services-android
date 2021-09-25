@@ -5,8 +5,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -17,10 +21,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDirections
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -84,7 +90,10 @@ class DetailFragment : Fragment() {
                     .padding(all = 20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Box(Modifier.height(200.dp).fillMaxWidth()) {
+                Box(
+                    Modifier
+                        .height(200.dp)
+                        .fillMaxWidth()) {
                     LocationsMapView(
                         locations = service.locations,
                         modifier = Modifier
@@ -96,18 +105,14 @@ class DetailFragment : Fragment() {
                             .fillMaxWidth()
                             .fillMaxHeight()
                             .clickable {
-                                val navController = view?.findNavController()
-                                if (navController?.currentDestination?.id == R.id.detailFragment) {
-                                    val direction = DetailFragmentDirections.actionDetailFragmentToMap(
-                                        service = service,
-                                        title = service.route
-                                    )
-                                    navController.navigate(direction)
-                                }
+                                val direction = DetailFragmentDirections.actionDetailFragmentToMap(
+                                    service = service,
+                                    title = service.route
+                                )
+                                navigate(direction)
                             }
                     )
                 }
-
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     text = service.area,
@@ -122,8 +127,29 @@ class DetailFragment : Fragment() {
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(20.dp))
+
+                val hasAdditionalInfo = ((service.additionalInfo?.length) ?: 0) > 0
+
+                val modifier = if (hasAdditionalInfo)
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = rememberRipple(bounded = true),
+                            onClick = {
+                                navigate(
+                                    DetailFragmentDirections.actionDetailFragmentToAdditional(
+                                        service
+                                    )
+                                )
+                            }
+                        )
+                else Modifier.fillMaxWidth()
+
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = modifier
                 ) {
                     val color = when (service.status) {
                         Status.NORMAL -> colorResource(id = R.color.colorStatusNormal)
@@ -135,16 +161,26 @@ class DetailFragment : Fragment() {
                         drawCircle(color = color)
                     })
                     Spacer(modifier = Modifier.width(15.dp))
+                    val text = when (service.status) {
+                        Status.NORMAL -> "There are currently no disruptions with this service"
+                        Status.DISRUPTED -> "There are disruptions with this service"
+                        Status.CANCELLED -> "Sailings have been cancelled for this service"
+                        Status.UNKNOWN -> "Unable to fetch the disruption status for this service"
+                    }
                     Text(
-                        text = when (service.status) {
-                            Status.NORMAL -> "There are currently no disruptions with this service"
-                            Status.DISRUPTED -> "There are disruptions with this service"
-                            Status.CANCELLED -> "Sailings have been cancelled for this service"
-                            Status.UNKNOWN -> "Unable to fetch the disruption status for this service"
-                        },
+                        text = text,
                         fontSize = 18.sp,
-                        color = Color.Gray
+                        color = Color.Gray,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
+                    if (hasAdditionalInfo) {
+                        Spacer(modifier = Modifier.width(15.dp))
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            tint = Color.Gray,
+                            contentDescription = "Additional Info"
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(
@@ -166,27 +202,38 @@ class DetailFragment : Fragment() {
                         colors = SwitchDefaults.colors(checkedThumbColor = colorResource(id = R.color.colorAccent))
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
-                Button(
-                    onClick = {
-                        val navController = view?.findNavController()
-                        if (navController?.currentDestination?.id == R.id.detailFragment) {
-                            val direction = DetailFragmentDirections.actionDetailFragmentToAdditional(service)
-                            navController.navigate(direction)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.textButtonColors(
-                        backgroundColor = colorResource(id = R.color.colorAccent),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("ADDITIONAL INFO")
+
+                val containsSummerTimetable = resources.assets.list("Timetables/2021/Summer")
+                    ?.contains("${service.serviceID}.pdf") ?: false
+                if (containsSummerTimetable) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Divider(color = Color.LightGray, thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(35.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = rememberRipple(bounded = true),
+                                onClick = { }
+                            )
+                    ) {
+                        Text(
+                            text = "VIEW SUMMER 2021 TIMETABLE",
+                            textAlign = TextAlign.Left,
+                            fontSize = 15.sp,
+                            color = colorResource(id = R.color.colorAccent)
+                        )
+                    }
                 }
             }
         } ?: run {
             Column(
-                modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -217,9 +264,9 @@ class DetailFragment : Fragment() {
     ) {
         val mapData = remember(locations) {
             val markers = locations.map { location ->
-            MarkerOptions()
-                .position(LatLng(location.latitude, location.longitude))
-                .title(location.name)
+                MarkerOptions()
+                    .position(LatLng(location.latitude, location.longitude))
+                    .title(location.name)
             }
 
             val builder = LatLngBounds.Builder()
@@ -253,6 +300,13 @@ class DetailFragment : Fragment() {
             }
         }
 
-        AndroidView( { map }, modifier = modifier)
+        AndroidView({ map }, modifier = modifier)
+    }
+
+    private fun navigate(direction: NavDirections) {
+        val navController = view?.findNavController()
+        if (navController?.currentDestination?.id == R.id.detailFragment) {
+            navController.navigate(direction)
+        }
     }
 }
