@@ -1,5 +1,7 @@
 package com.stefanchurch.ferryservices.detail
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.FileProvider.getUriForFile
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,6 +47,7 @@ import com.stefanchurch.ferryservices.rememberMapViewWithLifecycle
 import com.google.maps.android.ktx.awaitMap
 import com.stefanchurch.ferryservices.models.Location
 import io.sentry.Sentry
+import java.io.File
 import kotlin.math.min
 
 class DetailFragment : Fragment() {
@@ -203,7 +207,8 @@ class DetailFragment : Fragment() {
                     )
                 }
 
-                val containsSummerTimetable = resources.assets.list("Timetables/2021/Summer")
+                val summerPath = "Timetables/2021/Summer"
+                val containsSummerTimetable = resources.assets.list(summerPath)
                     ?.contains("${service.serviceID}.pdf") ?: false
                 if (containsSummerTimetable) {
                     Spacer(modifier = Modifier.height(20.dp))
@@ -217,7 +222,9 @@ class DetailFragment : Fragment() {
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = rememberRipple(bounded = true),
-                                onClick = { }
+                                onClick = {
+                                    openPdf("${summerPath}/${service.serviceID}.pdf")
+                                }
                             )
                     ) {
                         Text(
@@ -301,6 +308,29 @@ class DetailFragment : Fragment() {
         }
 
         AndroidView({ map }, modifier = modifier)
+    }
+
+    private fun openPdf(file: String) {
+        val context = context?.let { it } ?: return
+
+        val timetablesPath = File(context.filesDir, "timetables")
+        timetablesPath.mkdir()
+        val timetableFile = File(timetablesPath, "timetable.pdf")
+
+        context.assets?.open(file).use { input ->
+            timetableFile.outputStream().use { output ->
+                input?.copyTo(output, 1024)
+            }
+        }
+
+        val timetableUri = getUriForFile(context, "com.scottishferryapp.fileprovider", timetableFile)
+        val sendIntent: Intent = Intent().apply {
+            action = Intent.ACTION_VIEW
+            type = "application/pdf"
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            data = timetableUri
+        }
+        startActivity(sendIntent)
     }
 
     private fun navigate(direction: NavDirections) {
