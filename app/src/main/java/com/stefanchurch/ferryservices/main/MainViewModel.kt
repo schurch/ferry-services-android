@@ -1,5 +1,8 @@
 package com.stefanchurch.ferryservices.main
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,23 +22,32 @@ class MainViewModel(
 
     var showError: ((String) -> Unit)? = null
 
-    val rows: MutableLiveData<List<ServiceItem>> by lazy {
-        MutableLiveData<List<ServiceItem>>()
-    }
+    private val _items: MutableState<List<ServiceItem>>
+    val items: State<List<ServiceItem>>
+        get() = _items
+
+    private val _isRefreshing: MutableState<Boolean>
+    val isRefreshing: State<Boolean>
+        get() = _isRefreshing
 
     init {
-        rows.value = convertServicesToRows(getSubscribedServicesIDs(), defaultServices)
+        _items = mutableStateOf(convertServicesToRows(getSubscribedServicesIDs(), defaultServices))
+        _isRefreshing = mutableStateOf(false)
     }
 
-    fun reloadServices() {
+    fun refresh() {
+        _isRefreshing.value = true
+
         viewModelScope.launch {
             try {
                 val services = servicesRepository.getServices()
-                rows.value = convertServicesToRows(getSubscribedServicesIDs(), services)
+                _items.value = convertServicesToRows(getSubscribedServicesIDs(), services)
             }
             catch (e: Throwable) {
                 showError?.invoke("There was a problem updating the services. Please try again later.")
             }
+
+            _isRefreshing.value = false
         }
     }
 

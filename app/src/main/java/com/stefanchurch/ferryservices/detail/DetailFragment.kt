@@ -230,7 +230,7 @@ class DetailFragment : Fragment() {
                         Text(
                             text = "VIEW SUMMER 2021 TIMETABLE",
                             textAlign = TextAlign.Left,
-                            fontSize = 15.sp,
+                            fontSize = 18.sp,
                             color = colorResource(id = R.color.colorAccent)
                         )
                     }
