@@ -207,11 +207,13 @@ class DetailFragment : Fragment() {
                     )
                 }
 
+                Spacer(modifier = Modifier.height(10.dp))
+
                 val winterPath = "Timetables/2021/Winter"
                 val containsWinterTimetable = resources.assets.list(winterPath)
                     ?.contains("${service.serviceID}.pdf") ?: false
                 if (containsWinterTimetable) {
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Divider(color = Color.LightGray, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(10.dp))
                     Column(
@@ -240,7 +242,7 @@ class DetailFragment : Fragment() {
                 val containsSummerTimetable = resources.assets.list(summerPath)
                     ?.contains("${service.serviceID}.pdf") ?: false
                 if (containsSummerTimetable) {
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Divider(color = Color.LightGray, thickness = 1.dp)
                     Spacer(modifier = Modifier.height(10.dp))
                     Column(
