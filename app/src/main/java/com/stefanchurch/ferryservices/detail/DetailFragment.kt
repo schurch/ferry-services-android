@@ -207,6 +207,35 @@ class DetailFragment : Fragment() {
                     )
                 }
 
+                val winterPath = "Timetables/2021/Winter"
+                val containsWinterTimetable = resources.assets.list(winterPath)
+                    ?.contains("${service.serviceID}.pdf") ?: false
+                if (containsWinterTimetable) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Divider(color = Color.LightGray, thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(35.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = rememberRipple(bounded = true),
+                                onClick = {
+                                    openPdf("${winterPath}/${service.serviceID}.pdf")
+                                }
+                            )
+                    ) {
+                        Text(
+                            text = "VIEW WINTER 2021–2022 TIMETABLE",
+                            textAlign = TextAlign.Left,
+                            fontSize = 18.sp,
+                            color = colorResource(id = R.color.colorAccent)
+                        )
+                    }
+                }
+
                 val summerPath = "Timetables/2021/Summer"
                 val containsSummerTimetable = resources.assets.list(summerPath)
                     ?.contains("${service.serviceID}.pdf") ?: false
