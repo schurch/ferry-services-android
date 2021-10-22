@@ -209,63 +209,17 @@ class DetailFragment : Fragment() {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                val winterPath = "Timetables/2021/Winter"
-                val containsWinterTimetable = resources.assets.list(winterPath)
-                    ?.contains("${service.serviceID}.pdf") ?: false
-                if (containsWinterTimetable) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Divider(color = Color.LightGray, thickness = 1.dp)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(35.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = rememberRipple(bounded = true),
-                                onClick = {
-                                    openPdf("${winterPath}/${service.serviceID}.pdf")
-                                }
-                            )
-                    ) {
-                        Text(
-                            text = "VIEW WINTER 2021–2022 TIMETABLE",
-                            textAlign = TextAlign.Left,
-                            fontSize = 18.sp,
-                            color = colorResource(id = R.color.colorAccent)
-                        )
-                    }
-                }
+                TimetableButton(
+                    title = "VIEW WINTER 2021–2022 TIMETABLE",
+                    path = "Timetables/2021/Winter",
+                    serviceID = service.serviceID
+                )
 
-                val summerPath = "Timetables/2021/Summer"
-                val containsSummerTimetable = resources.assets.list(summerPath)
-                    ?.contains("${service.serviceID}.pdf") ?: false
-                if (containsSummerTimetable) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Divider(color = Color.LightGray, thickness = 1.dp)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(35.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = rememberRipple(bounded = true),
-                                onClick = {
-                                    openPdf("${summerPath}/${service.serviceID}.pdf")
-                                }
-                            )
-                    ) {
-                        Text(
-                            text = "VIEW SUMMER 2021 TIMETABLE",
-                            textAlign = TextAlign.Left,
-                            fontSize = 18.sp,
-                            color = colorResource(id = R.color.colorAccent)
-                        )
-                    }
-                }
+                TimetableButton(
+                    title = "VIEW SUMMER 2021 TIMETABLE",
+                    path = "Timetables/2021/Summer",
+                    serviceID = service.serviceID
+                )
             }
         } ?: run {
             Column(
@@ -279,6 +233,37 @@ class DetailFragment : Fragment() {
                     text = "Loading...",
                     fontSize = 18.sp,
                     color = Color.Gray
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun TimetableButton(title: String, path: String, serviceID: Int) {
+        val containsTimetable = resources.assets.list(path)
+            ?.contains("${serviceID}.pdf") ?: false
+        if (containsTimetable) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Divider(color = Color.LightGray, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(35.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = rememberRipple(bounded = true),
+                        onClick = {
+                            openPdf("${path}/${serviceID}.pdf")
+                        }
+                    )
+            ) {
+                Text(
+                    text = title,
+                    textAlign = TextAlign.Left,
+                    fontSize = 18.sp,
+                    color = colorResource(id = R.color.colorAccent)
                 )
             }
         }
