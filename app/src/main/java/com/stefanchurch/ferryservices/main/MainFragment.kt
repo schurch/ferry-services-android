@@ -10,11 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -65,15 +61,6 @@ class MainFragment : Fragment() {
         binding.detailScreen.setContent {
             MainScreen()
         }
-
-//        model.showError = { error ->
-//            val builder = AlertDialog.Builder(binding.root.context)
-//            builder.setMessage(error)
-//                .setPositiveButton(R.string.ok) { dialog, _ ->
-//                    dialog.dismiss()
-//                }
-//            builder.create().show()
-//        }
 
         return binding.root
     }

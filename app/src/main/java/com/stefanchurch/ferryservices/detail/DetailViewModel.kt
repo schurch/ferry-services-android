@@ -41,7 +41,11 @@ class DetailViewModel(
             _service.value = serviceDetailArgument.service
         } else {
             viewModelScope.launch {
-                _service.value = servicesRepository.getService(serviceID)
+                try {
+                    _service.value = servicesRepository.getService(serviceID)
+                } catch (exception: Throwable) {
+                    //TODO: Error handling
+                }
             }
         }
 
@@ -70,7 +74,7 @@ class DetailViewModel(
 
                 _subscribedEnabled.value = true
             }
-            catch (e: Throwable) {
+            catch (exception: Throwable) {
                 _isSubscribed.value = !subscribed
                 _subscribedEnabled.value = true
             }

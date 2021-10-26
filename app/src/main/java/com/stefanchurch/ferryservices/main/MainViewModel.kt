@@ -20,8 +20,6 @@ class MainViewModel(
     private val preferences: Preferences,
 ) : ViewModel() {
 
-    var showError: ((String) -> Unit)? = null
-
     private val _items: MutableState<List<ServiceItem>>
     val items: State<List<ServiceItem>>
         get() = _items
@@ -43,8 +41,8 @@ class MainViewModel(
                 val services = servicesRepository.getServices()
                 _items.value = convertServicesToRows(getSubscribedServicesIDs(), services)
             }
-            catch (e: Throwable) {
-                showError?.invoke("There was a problem updating the services. Please try again later.")
+            catch (exception: Throwable) {
+                //TODO: Error handling
             }
 
             _isRefreshing.value = false
