@@ -7,7 +7,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.installations.FirebaseInstallations
+import com.google.firebase.messaging.FirebaseMessaging
 import com.stefanchurch.ferryservices.databinding.MainActivityBinding
 import com.stefanchurch.ferryservices.detail.ServiceDetailArgument
 import com.stefanchurch.ferryservices.main.MainFragmentDirections
@@ -30,41 +30,40 @@ class MainActivity : AppCompatActivity() {
             appBarConfiguration
         )
 
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                return@OnCompleteListener
+            }
 
-        FirebaseInstallations.getInstance().getToken(true)
-            .addOnCompleteListener(OnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    return@OnCompleteListener
-                }
+            val token = task.result?.let { it } ?: return@OnCompleteListener
 
-                task.result?.token?.let {
-                    GlobalScope.launch {
-                        try {
-                            val installationID =
-                                InstallationID.getInstallationID(applicationContext)
+            GlobalScope.launch {
+                try {
+                    val installationID = InstallationID.getInstallationID(applicationContext)
 
-                            ServicesRepository
-                                .getInstance(applicationContext)
-                                .updateInstallation(installationID, it)
+                    ServicesRepository
+                        .getInstance(applicationContext)
+                        .updateInstallation(installationID, token)
 
-                            val prefs = applicationContext.getSharedPreferences(
-                                applicationContext.getString(R.string.preferences_key),
-                                MODE_PRIVATE
-                            )
+                    val prefs = applicationContext.getSharedPreferences(
+                        applicationContext.getString(R.string.preferences_key),
+                        MODE_PRIVATE
+                    )
 
-                            with(prefs.edit()) {
-                                putBoolean(
-                                    applicationContext.getString(R.string.preferences_created_installation_key),
-                                    true
-                                )
-                                apply()
-                            }
-                        } catch (exception: Throwable) {
-                            // Ignore any errors and let the application continue
-                        }
+                    with(prefs.edit()) {
+                        putBoolean(
+                            applicationContext.getString(R.string.preferences_created_installation_key),
+                            true
+                        )
+                        apply()
                     }
+                } catch (exception: Throwable) {
+                    // Ignore any errors and let the application continue
                 }
-            })
+            }
+        })
+
+
 
         intent.extras?.getString("service_id")?.let {
             if (navController.currentDestination?.id == R.id.mainFragment) {
