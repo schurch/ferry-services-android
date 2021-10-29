@@ -10,6 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
@@ -32,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.findNavController
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.stefanchurch.ferryservices.FerriesTheme
 import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.SharedPreferences
@@ -59,7 +61,9 @@ class MainFragment : Fragment() {
 
         binding.lifecycleOwner = viewLifecycleOwner
         binding.detailScreen.setContent {
-            MainScreen()
+            FerriesTheme {
+                MainScreen()
+            }
         }
 
         return binding.root
@@ -101,6 +105,7 @@ class MainFragment : Fragment() {
                         is ServiceItem.ServiceItemHeader -> Text(
                             text = row.text,
                             fontSize = 18.sp,
+                            color = MaterialTheme.colors.primary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(start = 10.dp, top = 8.dp)
                         )
@@ -141,6 +146,7 @@ class MainFragment : Fragment() {
                                     Text(
                                         text = row.service.area,
                                         fontSize = 18.sp,
+                                        color = MaterialTheme.colors.primary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -148,7 +154,7 @@ class MainFragment : Fragment() {
                                     Text(
                                         text = row.service.route,
                                         fontSize = 14.sp,
-                                        color = Color.Gray,
+                                        color = MaterialTheme.colors.secondary,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )

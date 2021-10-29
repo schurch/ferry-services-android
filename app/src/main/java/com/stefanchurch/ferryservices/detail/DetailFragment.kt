@@ -36,14 +36,12 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
-import com.stefanchurch.ferryservices.ServicesRepository
-import com.stefanchurch.ferryservices.R
-import com.stefanchurch.ferryservices.SharedPreferences
 import com.stefanchurch.ferryservices.databinding.DetailFragmentBinding
 import com.stefanchurch.ferryservices.models.Status
 import com.stefanchurch.ferryservices.models.status
-import com.stefanchurch.ferryservices.rememberMapViewWithLifecycle
 import com.google.maps.android.ktx.awaitMap
+import com.stefanchurch.ferryservices.*
+import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.models.Location
 import io.sentry.Sentry
 import java.io.File
@@ -67,7 +65,9 @@ class DetailFragment : Fragment() {
 
         binding.lifecycleOwner = viewLifecycleOwner
         binding.detailScreen.setContent {
-            DetailScreen()
+            FerriesTheme {
+                DetailScreen()
+            }
         }
 
         return binding.root
@@ -120,13 +120,13 @@ class DetailFragment : Fragment() {
                 Text(
                     text = service.area,
                     fontSize = 30.sp,
-                    color = Color.DarkGray,
+                    color = MaterialTheme.colors.primary,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = service.route,
                     fontSize = 20.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colors.secondary,
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(20.dp))
@@ -173,14 +173,14 @@ class DetailFragment : Fragment() {
                     Text(
                         text = text,
                         fontSize = 18.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colors.secondary,
                         modifier = Modifier.weight(1f, fill = false)
                     )
                     if (hasAdditionalInfo) {
                         Spacer(modifier = Modifier.width(15.dp))
                         Icon(
                             imageVector = Icons.Outlined.Info,
-                            tint = Color.Gray,
+                            tint = MaterialTheme.colors.secondary,
                             contentDescription = "Additional Info"
                         )
                     }
@@ -194,7 +194,7 @@ class DetailFragment : Fragment() {
                     Text(
                         text = "Subscribe to updates",
                         fontSize = 18.sp,
-                        color = Color.Gray
+                        color = MaterialTheme.colors.secondary,
                     )
                     Switch(
                         checked = viewModel.isSubscribed.value,
@@ -231,7 +231,7 @@ class DetailFragment : Fragment() {
                 Text(
                     text = "Loading...",
                     fontSize = 18.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colors.secondary,
                 )
             }
         }
@@ -243,13 +243,12 @@ class DetailFragment : Fragment() {
             ?.contains("${serviceID}.pdf") ?: false
         if (containsTimetable) {
             Spacer(modifier = Modifier.height(10.dp))
-            Divider(color = Color.LightGray, thickness = 1.dp)
+            Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
             Spacer(modifier = Modifier.height(10.dp))
             Column(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(35.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = rememberRipple(bounded = true),
