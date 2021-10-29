@@ -1,5 +1,6 @@
 package com.stefanchurch.ferryservices.map
 
+import android.content.res.Configuration
 import androidx.fragment.app.Fragment
 
 import android.os.Bundle
@@ -12,7 +13,9 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
+import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.databinding.MapFragmentBinding
 import io.sentry.Sentry
 
@@ -31,7 +34,7 @@ class MapFragment : Fragment() {
 
         mapView = binding.mapView
         mapView?.onCreate(null)
-        mapView?.getMapAsync { map ->
+        mapView?.getMapAsync { googleMap ->
             val markers = args.service.locations.map { location ->
                 MarkerOptions()
                     .position(LatLng(location.latitude, location.longitude))
@@ -40,12 +43,26 @@ class MapFragment : Fragment() {
 
             val builder = LatLngBounds.Builder()
             markers.forEach {
-                map.addMarker(it)
+                googleMap.addMarker(it)
                 builder.include(it.position)
             }
 
+            when (context?.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+                Configuration.UI_MODE_NIGHT_YES -> {
+                    googleMap.setMapStyle(
+                        MapStyleOptions.loadRawResourceStyle(
+                            context,
+                            R.raw.style_json
+                        )
+                    )
+                }
+                else -> {
+                    googleMap.setMapStyle(null)
+                }
+            }
+
             try {
-                map.moveCamera(
+                googleMap.moveCamera(
                     CameraUpdateFactory.newLatLngBounds(builder.build(), 90)
                 )
             } catch (exception: Throwable) {

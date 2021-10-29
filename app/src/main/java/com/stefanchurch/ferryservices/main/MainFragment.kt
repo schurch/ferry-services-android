@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -104,9 +105,8 @@ class MainFragment : Fragment() {
                     when (row) {
                         is ServiceItem.ServiceItemHeader -> Text(
                             text = row.text,
-                            fontSize = 18.sp,
                             color = MaterialTheme.colors.primary,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.h6,
                             modifier = Modifier.padding(start = 10.dp, top = 8.dp)
                         )
                         is ServiceItem.ServiceItemService ->
@@ -145,16 +145,16 @@ class MainFragment : Fragment() {
                                 Column {
                                     Text(
                                         text = row.service.area,
-                                        fontSize = 18.sp,
                                         color = MaterialTheme.colors.primary,
+                                        style = MaterialTheme.typography.subtitle1,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = row.service.route,
-                                        fontSize = 14.sp,
                                         color = MaterialTheme.colors.secondary,
+                                        style = MaterialTheme.typography.body1,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )

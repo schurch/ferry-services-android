@@ -1,6 +1,7 @@
 package com.stefanchurch.ferryservices.detail
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,10 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider.getUriForFile
@@ -35,6 +33,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
 import com.stefanchurch.ferryservices.databinding.DetailFragmentBinding
 import com.stefanchurch.ferryservices.models.Status
@@ -119,15 +118,13 @@ class DetailFragment : Fragment() {
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
                     text = service.area,
-                    fontSize = 30.sp,
                     color = MaterialTheme.colors.primary,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.h5
                 )
                 Text(
                     text = service.route,
-                    fontSize = 20.sp,
                     color = MaterialTheme.colors.secondary,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.h6
                 )
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -172,8 +169,8 @@ class DetailFragment : Fragment() {
                     }
                     Text(
                         text = text,
-                        fontSize = 18.sp,
                         color = MaterialTheme.colors.secondary,
+                        style = MaterialTheme.typography.body1,
                         modifier = Modifier.weight(1f, fill = false)
                     )
                     if (hasAdditionalInfo) {
@@ -193,8 +190,8 @@ class DetailFragment : Fragment() {
                 ) {
                     Text(
                         text = "Subscribe to updates",
-                        fontSize = 18.sp,
                         color = MaterialTheme.colors.secondary,
+                        style = MaterialTheme.typography.body1
                     )
                     Switch(
                         checked = viewModel.isSubscribed.value,
@@ -230,8 +227,8 @@ class DetailFragment : Fragment() {
             ) {
                 Text(
                     text = "Loading...",
-                    fontSize = 18.sp,
                     color = MaterialTheme.colors.secondary,
+                    style = MaterialTheme.typography.body1
                 )
             }
         }
@@ -259,9 +256,9 @@ class DetailFragment : Fragment() {
             ) {
                 Text(
                     text = title,
-                    textAlign = TextAlign.Left,
-                    fontSize = 18.sp,
-                    color = colorResource(id = R.color.colorAccent)
+                    color = colorResource(id = R.color.colorAccent),
+                    style = MaterialTheme.typography.body1,
+                    textAlign = TextAlign.Left
                 )
             }
         }
@@ -303,6 +300,20 @@ class DetailFragment : Fragment() {
 
             googleMap.uiSettings.setAllGesturesEnabled(false)
             googleMap.setOnMarkerClickListener { true }
+
+            when (context?.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+                Configuration.UI_MODE_NIGHT_YES -> {
+                    googleMap.setMapStyle(
+                        MapStyleOptions.loadRawResourceStyle(
+                            context,
+                            R.raw.style_json
+                        )
+                    )
+                }
+                else -> {
+                    googleMap.setMapStyle(null)
+                }
+            }
 
             val (markers, mapBounds) = mapData
             markers.forEach {

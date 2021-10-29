@@ -40,7 +40,7 @@ class AdditionalFragment: Fragment() {
                     <meta name='viewport' content='width=device-width, initial-scale=1'>
                     <meta name="color-scheme" content="dark light">
                     <style type='text/css'>
-                        body { color: #606060; background-color: #ffffff; }
+                        body { color: #000000; background-color: #ffffff; }
                         a { color: #21BFAA; }
                         
                         @media (prefers-color-scheme: dark) {
