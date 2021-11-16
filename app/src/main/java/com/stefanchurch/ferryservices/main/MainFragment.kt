@@ -1,11 +1,9 @@
 package com.stefanchurch.ferryservices.main
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import androidx.appcompat.widget.SearchView
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -19,25 +17,20 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.findNavController
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import com.stefanchurch.ferryservices.FerriesTheme
-import com.stefanchurch.ferryservices.ServicesRepository
+import com.stefanchurch.ferryservices.*
 import com.stefanchurch.ferryservices.R
-import com.stefanchurch.ferryservices.SharedPreferences
 import com.stefanchurch.ferryservices.databinding.DetailFragmentBinding
 import com.stefanchurch.ferryservices.detail.ServiceDetailArgument
 import com.stefanchurch.ferryservices.models.Service
@@ -47,6 +40,15 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 class MainFragment : Fragment() {
+
+    private val viewModel: MainViewModel by viewModels {
+        MainViewModelFactory(
+            getDefaultServices(),
+            ServicesRepository.getInstance(requireContext().applicationContext),
+            SharedPreferences(requireContext().applicationContext),
+            this
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,26 +65,37 @@ class MainFragment : Fragment() {
         binding.lifecycleOwner = viewLifecycleOwner
         binding.detailScreen.setContent {
             FerriesTheme {
-                MainScreen()
+                MainScreen(viewModel = viewModel)
             }
         }
+
+        setHasOptionsMenu(true)
 
         return binding.root
     }
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+
+        inflater.inflate(R.menu.menu_main, menu)
+
+        val searchItem = menu.findItem(R.id.mainFragment)
+        val searchView = searchItem.actionView as SearchView
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextChange(newText: String): Boolean {
+                viewModel.updateSearchText(newText)
+                return true
+            }
+
+            override fun onQueryTextSubmit(query: String): Boolean {
+                return true
+            }
+        })
+    }
+
     @Composable
-    private fun MainScreen(
-        viewModel: MainViewModel = viewModel(
-            viewModelStoreOwner = this,
-            key = null,
-            factory = MainViewModelFactory(
-                getDefaultServices(),
-                ServicesRepository.getInstance(requireContext().applicationContext),
-                SharedPreferences(requireContext().applicationContext),
-                this
-            )
-        )
-    ) {
+    private fun MainScreen(viewModel: MainViewModel) {
         val lifecycle = LocalLifecycleOwner.current.lifecycle
         DisposableEffect(lifecycle) {
             val lifecycleObserver = LifecycleEventObserver { _, event ->

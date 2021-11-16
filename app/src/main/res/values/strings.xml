@@ -7,8 +7,9 @@
     <string name="status_cancelled">Sailings have been cancelled for this service</string>
     <string name="status_unknown">Unable to fetch the disruption status for this service</string>
     <string name="subscribe_to_updates">Subscribe to updates</string>
-    <string name="loading">Loading...</string>
-    <string name="empty"></string>
+    <string name="loading">Loading…</string>
+    <string name="search">Search</string>
+<!--    <string name="empty"></string>-->
 
     <!-- Preferences keys -->
     <string name="preferences_key">com.stefanchurch.ferryservices.preferences</string>

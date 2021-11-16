@@ -28,8 +28,11 @@ class MainViewModel(
     val isRefreshing: State<Boolean>
         get() = _isRefreshing
 
+    private var services: Array<Service> = defaultServices
+    private var searchText: String = ""
+
     init {
-        _items = mutableStateOf(convertServicesToRows(getSubscribedServicesIDs(), defaultServices))
+        _items = mutableStateOf(convertServicesToRows(getSubscribedServicesIDs(), services, searchText))
         _isRefreshing = mutableStateOf(false)
     }
 
@@ -38,8 +41,8 @@ class MainViewModel(
 
         viewModelScope.launch {
             try {
-                val services = servicesRepository.getServices()
-                _items.value = convertServicesToRows(getSubscribedServicesIDs(), services)
+                services = servicesRepository.getServices()
+                updateRows()
             }
             catch (exception: Throwable) {
                 //TODO: Error handling
@@ -47,6 +50,15 @@ class MainViewModel(
 
             _isRefreshing.value = false
         }
+    }
+
+    fun updateSearchText(searchText: String) {
+        this.searchText = searchText
+        updateRows()
+    }
+
+    private fun updateRows() {
+        _items.value = convertServicesToRows(getSubscribedServicesIDs(), services, searchText)
     }
 
     private fun getSubscribedServicesIDs() : List<Int> {
@@ -57,7 +69,22 @@ class MainViewModel(
 
 }
 
-private fun convertServicesToRows(subscribedServiceIDs: List<Int>, services: Array<Service>) : List<ServiceItem> {
+private fun convertServicesToRows(
+    subscribedServiceIDs: List<Int>,
+    services: Array<Service>,
+    searchText: String
+) : List<ServiceItem> {
+     if (searchText.isNotEmpty()) {
+        return services
+            .filter { service ->
+                service.area.lowercase().contains(searchText.lowercase()) ||
+                        service.route.lowercase().contains(searchText.lowercase())
+            }
+            .map {
+                ServiceItem.ServiceItemService(it)
+            }
+    }
+
     val subscribedServices = subscribedServiceIDs
         .mapNotNull { services.find { service -> service.serviceID == it} }
         .sortedBy { it.sortOrder }

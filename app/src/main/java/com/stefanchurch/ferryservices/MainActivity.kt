@@ -2,10 +2,12 @@ package com.stefanchurch.ferryservices
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.databinding.DataBindingUtil.setContentView
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
+import androidx.navigation.ui.setupWithNavController
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.stefanchurch.ferryservices.databinding.MainActivityBinding
@@ -24,8 +26,11 @@ class MainActivity : AppCompatActivity() {
         val navController =
             (supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment).navController
         val appBarConfiguration = AppBarConfiguration(navController.graph)
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+
+        setSupportActionBar(toolbar)
         NavigationUI.setupWithNavController(
-            findViewById(R.id.toolbar),
+            toolbar,
             navController,
             appBarConfiguration
         )
@@ -62,8 +67,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
-
-
 
         intent.extras?.getString("service_id")?.let {
             if (navController.currentDestination?.id == R.id.mainFragment) {
