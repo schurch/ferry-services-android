@@ -40,18 +40,22 @@ class DetailViewModel(
         if (serviceDetailArgument.service != null) {
             _service.value = serviceDetailArgument.service
         } else {
-            viewModelScope.launch {
-                try {
-                    _service.value = servicesRepository.getService(serviceID)
-                } catch (exception: Throwable) {
-                    //TODO: Error handling
-                }
-            }
+            refresh()
         }
 
         _isSubscribed.value = preferences.lookupString(R.string.preferences_subscribed_services_key)?.let {
             Json.decodeFromString<List<Int>>(it).contains(serviceID)
         } ?: false
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            try {
+                _service.value = servicesRepository.getService(serviceID)
+            } catch (exception: Throwable) {
+                //TODO: Error handling
+            }
+        }
     }
 
     fun updatedSubscribedStatus(subscribed: Boolean) {

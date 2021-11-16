@@ -25,7 +25,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider.getUriForFile
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.fragment.app.viewModels
 import androidx.navigation.NavDirections
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
@@ -50,6 +50,15 @@ class DetailFragment : Fragment() {
 
     private val args: DetailFragmentArgs by navArgs()
 
+    private val viewModel: DetailViewModel by viewModels {
+        DetailViewModelFactory(
+            args.serviceDetailArgument,
+            ServicesRepository.getInstance(requireContext().applicationContext),
+            SharedPreferences(requireContext().applicationContext),
+            this
+        )
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -65,26 +74,21 @@ class DetailFragment : Fragment() {
         binding.lifecycleOwner = viewLifecycleOwner
         binding.detailScreen.setContent {
             FerriesTheme {
-                DetailScreen()
+                DetailScreen(viewModel = viewModel)
             }
         }
 
         return binding.root
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        viewModel.refresh()
+    }
+
     @Composable
-    private fun DetailScreen(
-        viewModel: DetailViewModel = viewModel(
-            viewModelStoreOwner = this,
-            key = null,
-            factory = DetailViewModelFactory(
-                args.serviceDetailArgument,
-                ServicesRepository.getInstance(requireContext().applicationContext),
-                SharedPreferences(requireContext().applicationContext),
-                this
-            )
-        )
-    ) {
+    private fun DetailScreen(viewModel: DetailViewModel) {
         viewModel.service.value?.let { service ->
             Column(
                 modifier =
