@@ -6,6 +6,7 @@ import com.android.volley.RequestQueue
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.stefanchurch.ferryservices.models.Service
+import com.stefanchurch.ferryservices.models.Vessel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -107,6 +108,19 @@ class ServicesRepository(private val context: Context) {
             cont.resumeWithException(error)
         })
 
+        addToRequestQueue(request)
+    }
+
+    suspend fun getVessels() = suspendCoroutine<Array<Vessel>> { cont ->
+        val url = URL(baseURL, "/api/vessels")
+        val request = StringRequest(Request.Method.GET, url.toString(), { response ->
+            val format = Json { ignoreUnknownKeys = true }
+            val vessels = format
+                .decodeFromString<Array<Vessel>>(response)
+            cont.resume(vessels)
+        }, { error ->
+            cont.resumeWithException(error)
+        })
         addToRequestQueue(request)
     }
 

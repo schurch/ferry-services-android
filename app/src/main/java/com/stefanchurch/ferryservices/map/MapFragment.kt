@@ -7,17 +7,20 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.stefanchurch.ferryservices.R
+import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.databinding.MapFragmentBinding
 import io.sentry.Sentry
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
 
 class MapFragment : Fragment() {
 
@@ -35,6 +38,36 @@ class MapFragment : Fragment() {
         mapView = binding.mapView
         mapView?.onCreate(null)
         mapView?.getMapAsync { googleMap ->
+            context?.let { context ->
+                lifecycleScope.launch {
+                    val markers = ServicesRepository
+                        .getInstance(context)
+                        .getVessels()
+                        .map { vessel ->
+                            val rotation = vessel.course ?: 0.0
+                            val x = sin(-rotation * Math.PI / 180) * 0.5 + 0.5
+                            val y = -(cos(-rotation * Math.PI / 180) * 0.5 - 0.5)
+
+                            MarkerOptions()
+                                .title(vessel.name)
+                                .snippet(vessel.speed?.let{ "$it knots" })
+                                .position(LatLng(vessel.latitude, vessel.longitude))
+                                .anchor(0.5f, 0.5f)
+                                .rotation(rotation.toFloat())
+                                .icon(BitmapDescriptorFactory.fromAsset("ferry.png"))
+                                .flat(true)
+                                .infoWindowAnchor(x.toFloat(), y.toFloat())
+                        }
+
+                    markers.forEach { marker ->
+                        val angle: Double = marker.rotation.toDouble()
+
+
+                        googleMap.addMarker(marker)
+                    }
+                }
+            }
+
             val markers = args.service.locations.map { location ->
                 MarkerOptions()
                     .position(LatLng(location.latitude, location.longitude))

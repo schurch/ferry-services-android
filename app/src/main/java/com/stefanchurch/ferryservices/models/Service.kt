@@ -1,9 +1,6 @@
 package com.stefanchurch.ferryservices.models
 
-import android.content.Context
 import android.os.Parcelable
-import androidx.core.content.ContextCompat
-import com.stefanchurch.ferryservices.R
 import kotlinx.android.parcel.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -59,12 +56,3 @@ data class Service(
 
 val Service.status: Status
     get() = Status.values().firstOrNull { it.value == statusValue } ?: Status.UNKNOWN
-
-fun Service.statusColor(context: Context): Int {
-    return when (status) {
-        Status.NORMAL -> ContextCompat.getColor(context, R.color.colorStatusNormal)
-        Status.DISRUPTED -> ContextCompat.getColor(context, R.color.colorStatusDisrupted)
-        Status.CANCELLED -> ContextCompat.getColor(context, R.color.colorStatusCancelled)
-        Status.UNKNOWN -> ContextCompat.getColor(context, R.color.colorStatusUnknown)
-    }
-}
