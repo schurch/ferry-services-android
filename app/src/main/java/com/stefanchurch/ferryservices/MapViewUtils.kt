@@ -65,7 +65,7 @@ fun convertVesselToMarkerOptions(vessel: Vessel) : MarkerOptions {
         .position(LatLng(vessel.latitude, vessel.longitude))
         .anchor(0.5f, 0.5f)
         .rotation(rotation.toFloat())
-        .icon(BitmapDescriptorFactory.fromAsset("ferry.png"))
+        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ferry))
         .flat(true)
         .infoWindowAnchor(x.toFloat(), y.toFloat())
         .zIndex(1.0f)

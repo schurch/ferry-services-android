@@ -36,13 +36,17 @@ class MapFragment : Fragment() {
         mapView?.getMapAsync { googleMap ->
             context?.let { context ->
                 lifecycleScope.launch {
-                    val markers = ServicesRepository
-                        .getInstance(context)
-                        .getVessels()
-                        .map(::convertVesselToMarkerOptions)
+                    try {
+                        val markers = ServicesRepository
+                            .getInstance(context)
+                            .getVessels()
+                            .map(::convertVesselToMarkerOptions)
 
-                    markers.forEach { marker ->
-                        googleMap.addMarker(marker)
+                        markers.forEach { marker ->
+                            googleMap.addMarker(marker)
+                        }
+                    } catch (exception: Throwable) {
+                        // Ignore error
                     }
                 }
             }

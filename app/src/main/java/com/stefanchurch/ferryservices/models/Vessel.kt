@@ -10,8 +10,8 @@ import kotlinx.serialization.Serializable
 data class Vessel(
     val mmsi: Int,
     val name: String,
-    val speed: Double?,
-    val course: Double?,
+    val speed: Double? = null,
+    val course: Double? = null,
     val latitude: Double,
     val longitude: Double,
     @SerialName("last_received") val lastReceived: String
