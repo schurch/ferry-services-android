@@ -9,6 +9,12 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.stefanchurch.ferryservices.models.Vessel
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Remembers a MapView and gives it the lifecycle of the current LifecycleOwner
@@ -47,3 +53,20 @@ private fun getMapLifecycleObserver(mapView: MapView): LifecycleEventObserver =
             else -> throw IllegalStateException()
         }
     }
+
+fun convertVesselToMarkerOptions(vessel: Vessel) : MarkerOptions {
+    val rotation = vessel.course ?: 0.0
+    val x = sin(-rotation * Math.PI / 180) * 0.5 + 0.5
+    val y = -(cos(-rotation * Math.PI / 180) * 0.5 - 0.5)
+
+    return MarkerOptions()
+        .title(vessel.name)
+        .snippet(vessel.speed?.let{ "$it knots" })
+        .position(LatLng(vessel.latitude, vessel.longitude))
+        .anchor(0.5f, 0.5f)
+        .rotation(rotation.toFloat())
+        .icon(BitmapDescriptorFactory.fromAsset("ferry.png"))
+        .flat(true)
+        .infoWindowAnchor(x.toFloat(), y.toFloat())
+        .zIndex(1.0f)
+}

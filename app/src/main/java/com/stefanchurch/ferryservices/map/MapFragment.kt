@@ -2,14 +2,12 @@ package com.stefanchurch.ferryservices.map
 
 import android.content.res.Configuration
 import androidx.fragment.app.Fragment
-
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
-
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.*
@@ -17,10 +15,8 @@ import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.databinding.MapFragmentBinding
 import io.sentry.Sentry
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.cos
-import kotlin.math.sin
+import com.stefanchurch.ferryservices.*
 
 class MapFragment : Fragment() {
 
@@ -43,26 +39,9 @@ class MapFragment : Fragment() {
                     val markers = ServicesRepository
                         .getInstance(context)
                         .getVessels()
-                        .map { vessel ->
-                            val rotation = vessel.course ?: 0.0
-                            val x = sin(-rotation * Math.PI / 180) * 0.5 + 0.5
-                            val y = -(cos(-rotation * Math.PI / 180) * 0.5 - 0.5)
-
-                            MarkerOptions()
-                                .title(vessel.name)
-                                .snippet(vessel.speed?.let{ "$it knots" })
-                                .position(LatLng(vessel.latitude, vessel.longitude))
-                                .anchor(0.5f, 0.5f)
-                                .rotation(rotation.toFloat())
-                                .icon(BitmapDescriptorFactory.fromAsset("ferry.png"))
-                                .flat(true)
-                                .infoWindowAnchor(x.toFloat(), y.toFloat())
-                        }
+                        .map(::convertVesselToMarkerOptions)
 
                     markers.forEach { marker ->
-                        val angle: Double = marker.rotation.toDouble()
-
-
                         googleMap.addMarker(marker)
                     }
                 }

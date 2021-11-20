@@ -42,6 +42,7 @@ import com.google.maps.android.ktx.awaitMap
 import com.stefanchurch.ferryservices.*
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.models.Location
+import com.stefanchurch.ferryservices.models.Vessel
 import io.sentry.Sentry
 import java.io.File
 import kotlin.math.min
@@ -102,6 +103,7 @@ class DetailFragment : Fragment() {
                         .fillMaxWidth()) {
                     LocationsMapView(
                         locations = service.locations,
+                        vessels = viewModel.vessels.value,
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight()
@@ -269,37 +271,40 @@ class DetailFragment : Fragment() {
     }
 
     @Composable
-    private fun LocationsMapView(locations: Array<Location>, modifier: Modifier) {
+    private fun LocationsMapView(locations: Array<Location>, vessels: Array<Vessel>, modifier: Modifier) {
         // The MapView lifecycle is handled by this composable. As the MapView also needs to be updated
         // with input from Compose UI, those updates are encapsulated into the MapViewContainer
         // composable. In this way, when an update to the MapView happens, this composable won't
         // recompose and the MapView won't need to be recreated.
         val mapView = rememberMapViewWithLifecycle()
-        MapViewContainer(mapView, locations, modifier)
+        MapViewContainer(mapView, locations, vessels, modifier)
     }
 
     @Composable
     private fun MapViewContainer(
         map: MapView,
         locations: Array<Location>,
+        vessels: Array<Vessel>,
         modifier: Modifier
     ) {
-        val mapData = remember(locations) {
-            val markers = locations.map { location ->
+        val mapData = remember(Pair(locations, vessels)) {
+            val vesselMarkers = vessels.map(::convertVesselToMarkerOptions)
+
+            val locationsMarkers = locations.map { location ->
                 MarkerOptions()
                     .position(LatLng(location.latitude, location.longitude))
                     .title(location.name)
             }
 
             val builder = LatLngBounds.Builder()
-            markers.forEach {
+            locationsMarkers.forEach {
                 builder.include(it.position)
             }
 
-            Pair(markers, builder.build())
+            Triple(locationsMarkers, vesselMarkers, builder.build())
         }
 
-        LaunchedEffect(map) {
+        LaunchedEffect(Triple(map, locations, vessels)) {
             val googleMap = map.awaitMap()
 
             googleMap.uiSettings.setAllGesturesEnabled(false)
@@ -319,8 +324,12 @@ class DetailFragment : Fragment() {
                 }
             }
 
-            val (markers, mapBounds) = mapData
-            markers.forEach {
+            val (locationMarkers, vesselMarkers, mapBounds) = mapData
+            locationMarkers.forEach {
+                googleMap.addMarker(it)
+            }
+
+            vesselMarkers.forEach {
                 googleMap.addMarker(it)
             }
 

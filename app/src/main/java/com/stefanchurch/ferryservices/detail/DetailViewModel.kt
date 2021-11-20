@@ -9,6 +9,7 @@ import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.Preferences
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.models.Service
+import com.stefanchurch.ferryservices.models.Vessel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -33,6 +34,10 @@ class DetailViewModel(
     val isSubscribed: State<Boolean>
         get() = _isSubscribed
 
+    private val _vessels: MutableState<Array<Vessel>> = mutableStateOf(arrayOf())
+    val vessels: State<Array<Vessel>>
+        get() = _vessels
+
     private val serviceID: Int = serviceDetailArgument.serviceID
     private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
 
@@ -52,6 +57,14 @@ class DetailViewModel(
         viewModelScope.launch {
             try {
                 _service.value = servicesRepository.getService(serviceID)
+            } catch (exception: Throwable) {
+                //TODO: Error handling
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                _vessels.value = servicesRepository.getVessels()
             } catch (exception: Throwable) {
                 //TODO: Error handling
             }
