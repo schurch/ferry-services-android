@@ -222,6 +222,25 @@ class DetailFragment : Fragment() {
                     path = "Timetables/2021/Summer",
                     serviceID = service.serviceID
                 )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                service.locations.mapNotNull { location ->
+                    location.weather?.let { weather ->
+                        Pair(location.name, weather)
+                    }
+                }.forEach { (name, weather) ->
+                    Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = name,
+                        color = MaterialTheme.colors.secondary,
+                        style = MaterialTheme.typography.h6
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(weather.description)
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
             }
         } ?: run {
             Column(

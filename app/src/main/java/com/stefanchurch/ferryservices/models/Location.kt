@@ -9,5 +9,6 @@ import kotlinx.serialization.Serializable
 data class Location(
     val name: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val weather: Weather? = null
 ) : Parcelable
