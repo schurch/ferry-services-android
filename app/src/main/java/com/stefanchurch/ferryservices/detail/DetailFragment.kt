@@ -287,23 +287,6 @@ class DetailFragment : Fragment() {
         vessels: Array<Vessel>,
         modifier: Modifier
     ) {
-        val mapData = remember(Pair(locations, vessels)) {
-            val vesselMarkers = vessels.map(::convertVesselToMarkerOptions)
-
-            val locationsMarkers = locations.map { location ->
-                MarkerOptions()
-                    .position(LatLng(location.latitude, location.longitude))
-                    .title(location.name)
-            }
-
-            val builder = LatLngBounds.Builder()
-            locationsMarkers.forEach {
-                builder.include(it.position)
-            }
-
-            Triple(locationsMarkers, vesselMarkers, builder.build())
-        }
-
         LaunchedEffect(Triple(map, locations, vessels)) {
             val googleMap = map.awaitMap()
 
@@ -324,8 +307,17 @@ class DetailFragment : Fragment() {
                 }
             }
 
-            val (locationMarkers, vesselMarkers, mapBounds) = mapData
+            val vesselMarkers = vessels.map(::convertVesselToMarkerOptions)
+
+            val locationMarkers = locations.map { location ->
+                MarkerOptions()
+                    .position(LatLng(location.latitude, location.longitude))
+                    .title(location.name)
+            }
+
+            val latLngBuilder = LatLngBounds.Builder()
             locationMarkers.forEach {
+                latLngBuilder.include(it.position)
                 googleMap.addMarker(it)
             }
 
@@ -338,7 +330,7 @@ class DetailFragment : Fragment() {
                 val height = resources.displayMetrics.heightPixels
                 val padding = min(width, height) * 0.15
                 googleMap.moveCamera(
-                    CameraUpdateFactory.newLatLngBounds(mapBounds, padding.toInt())
+                    CameraUpdateFactory.newLatLngBounds(latLngBuilder.build(), padding.toInt())
                 )
             } catch (exception: Throwable) {
                 Sentry.captureException(exception)
