@@ -2,6 +2,7 @@ package com.stefanchurch.ferryservices.detail
 
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +19,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -239,19 +242,73 @@ class DetailFragment : Fragment() {
                         style = MaterialTheme.typography.h6
                     )
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text(weather.description)
 
-                    Image(
-                        painter = painterResource(
-                            id = resources.getIdentifier(
-                                "@drawable/ic__${weather.icon.lowercase()}",
-                                null,
-                                requireContext().packageName
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(
+                                        id = resources.getIdentifier(
+                                            "@drawable/ic__${weather.icon.lowercase()}",
+                                            null,
+                                            requireContext().packageName
+                                        )
+                                    ),
+                                    contentDescription = weather.description,
+                                    contentScale = ContentScale.None,
+                                    modifier = Modifier
+                                        .height(40.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "${weather.temperatureCelsius}ºC",
+                                    color = MaterialTheme.colors.primary,
+                                    style = MaterialTheme.typography.h6
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = weather.description,
+                                color = MaterialTheme.colors.secondary,
+                                style = MaterialTheme.typography.body1
                             )
-                        ),
-                        contentDescription = weather.description
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.wind),
+                                    contentDescription = "Wind direction arrow",
+                                    contentScale = ContentScale.None,
+                                    modifier = Modifier
+                                        .rotate(weather.windDirection.toFloat())
+                                        .height(40.dp)
+                                )
+                                Spacer(modifier = Modifier.width(15.dp))
+                                Text(
+                                    text = "${weather.windSpeedMph} MPH",
+                                    color = MaterialTheme.colors.primary,
+                                    style = MaterialTheme.typography.h6
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "${weather.windDirectionCardinal} Wind",
+                                color = MaterialTheme.colors.secondary,
+                                style = MaterialTheme.typography.body1
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         } ?: run {
@@ -338,21 +395,15 @@ class DetailFragment : Fragment() {
                 }
             }
 
-            val vesselMarkers = vessels.map(::convertVesselToMarkerOptions)
+            vessels.map(::convertVesselToMarkerOptions).forEach { googleMap.addMarker(it) }
 
-            val locationMarkers = locations.map { location ->
+            val latLngBuilder = LatLngBounds.Builder()
+            locations.map { location ->
                 MarkerOptions()
                     .position(LatLng(location.latitude, location.longitude))
                     .title(location.name)
-            }
-
-            val latLngBuilder = LatLngBounds.Builder()
-            locationMarkers.forEach {
+            }.forEach {
                 latLngBuilder.include(it.position)
-                googleMap.addMarker(it)
-            }
-
-            vesselMarkers.forEach {
                 googleMap.addMarker(it)
             }
 
