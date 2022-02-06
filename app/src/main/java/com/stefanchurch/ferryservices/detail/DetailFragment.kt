@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.viewinterop.AndroidView
@@ -239,6 +240,17 @@ class DetailFragment : Fragment() {
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(weather.description)
+
+                    Image(
+                        painter = painterResource(
+                            id = resources.getIdentifier(
+                                "@drawable/ic__${weather.icon.lowercase()}",
+                                null,
+                                requireContext().packageName
+                            )
+                        ),
+                        contentDescription = weather.description
+                    )
                     Spacer(modifier = Modifier.height(10.dp))
                 }
             }
