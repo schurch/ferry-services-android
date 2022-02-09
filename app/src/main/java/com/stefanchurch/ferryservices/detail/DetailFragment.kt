@@ -289,7 +289,7 @@ class DetailFragment : Fragment() {
                                     contentDescription = "Wind direction arrow",
                                     contentScale = ContentScale.None,
                                     modifier = Modifier
-                                        .rotate(weather.windDirection.toFloat())
+                                        .rotate(weather.windDirection.toFloat() + 180)
                                         .height(40.dp)
                                 )
                                 Spacer(modifier = Modifier.width(15.dp))
@@ -394,6 +394,8 @@ class DetailFragment : Fragment() {
                     googleMap.setMapStyle(null)
                 }
             }
+
+            googleMap.clear()
 
             vessels.map(::convertVesselToMarkerOptions).forEach { googleMap.addMarker(it) }
 
