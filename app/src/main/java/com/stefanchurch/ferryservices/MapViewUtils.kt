@@ -1,6 +1,7 @@
 package com.stefanchurch.ferryservices
 
 import android.os.Bundle
+import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -13,6 +14,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.stefanchurch.ferryservices.models.Vessel
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -59,9 +63,20 @@ fun convertVesselToMarkerOptions(vessel: Vessel) : MarkerOptions {
     val x = sin(-rotation * Math.PI / 180) * 0.5 + 0.5
     val y = -(cos(-rotation * Math.PI / 180) * 0.5 - 0.5)
 
+    val date = Date.from(Instant.from(DateTimeFormatter.ISO_INSTANT.parse(vessel.lastReceived)))
+    val updatedTime = DateUtils
+        .getRelativeTimeSpanString(
+            date.time,
+            System.currentTimeMillis(),
+            0L,
+            DateUtils.FORMAT_ABBREV_RELATIVE
+        )
+        .toString()
+        .replace(".", "")
+
     return MarkerOptions()
         .title(vessel.name)
-        .snippet(vessel.speed?.let{ "$it knots" })
+        .snippet(vessel.speed?.let{ "$it knots • $updatedTime" })
         .position(LatLng(vessel.latitude, vessel.longitude))
         .anchor(0.5f, 0.5f)
         .rotation(rotation.toFloat())
