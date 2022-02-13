@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.firebase.messaging.ktx.remoteMessage
@@ -34,32 +35,37 @@ class FerriesMessagingService: FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        if (message.data.isNotEmpty()) {
-            val intent = Intent(this, MainActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            intent.putExtra("service_id", message.data["service_id"])
+        if (message.data.isEmpty()) { return }
 
-            val pendingIntent = PendingIntent.getActivity(this, 0, intent,
-                PendingIntent.FLAG_ONE_SHOT)
+        val title = message.data["title"] ?: return
+        val body = message.data["body"] ?: return
+        val serviceId = message.data["service_id"] ?: return
 
-            val channelId = "FERRIES_NOTIFICATIONS_CHANNEL_ID"
-            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val notificationBuilder = NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.ic_stat_ic_notification)
-                .setContentTitle(message.data["title"])
-                .setContentText(message.data["body"])
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent)
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        intent.putExtra("service_id", serviceId)
 
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT)
 
-            val channel = NotificationChannel(channelId,
-                "Scottish Ferries",
-                NotificationManager.IMPORTANCE_DEFAULT)
-            notificationManager.createNotificationChannel(channel)
+        val channelId = "FERRIES_SERVICE_STATUS_UPDATES"
+        val notificationBuilder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_stat_ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+            .setContentIntent(pendingIntent)
+            .setVisibility(VISIBILITY_PUBLIC)
 
-            notificationManager.notify(SystemClock.uptimeMillis().toInt(), notificationBuilder.build())
-        }
+        val notificationChannel = NotificationChannel(
+            channelId,
+            "Service status updates",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        notificationChannel.enableVibration(true)
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(notificationChannel)
+        notificationManager.notify(SystemClock.uptimeMillis().toInt(), notificationBuilder.build())
     }
 }
