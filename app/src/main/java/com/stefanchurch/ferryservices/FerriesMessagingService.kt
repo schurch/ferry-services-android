@@ -44,6 +44,7 @@ class FerriesMessagingService: FirebaseMessagingService() {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         intent.putExtra("service_id", serviceId)
+        intent.action = System.currentTimeMillis().toString()
 
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT)
 
