@@ -222,8 +222,8 @@ class DetailFragment : Fragment() {
                 )
 
                 TimetableButton(
-                    title = "VIEW SUMMER 2021 TIMETABLE",
-                    path = "Timetables/2021/Summer",
+                    title = "VIEW SUMMER 2022 TIMETABLE",
+                    path = "Timetables/2022/Summer",
                     serviceID = service.serviceID
                 )
 
