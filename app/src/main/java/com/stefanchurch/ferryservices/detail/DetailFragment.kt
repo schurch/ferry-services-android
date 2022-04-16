@@ -385,7 +385,7 @@ class DetailFragment : Fragment() {
                 Configuration.UI_MODE_NIGHT_YES -> {
                     googleMap.setMapStyle(
                         MapStyleOptions.loadRawResourceStyle(
-                            context,
+                            requireContext(),
                             R.raw.style_json
                         )
                     )
