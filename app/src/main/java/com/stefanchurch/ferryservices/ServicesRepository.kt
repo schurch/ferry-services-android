@@ -135,11 +135,7 @@ class ServicesRepository(private val context: Context) {
 
 private fun responseToServices(response: String) : Array<Service> {
     val format = Json { ignoreUnknownKeys = true }
-    val services = format
-        .decodeFromString<Array<Service>>(response)
-        .sortedBy { it.sortOrder }
-
-    return services.toTypedArray()
+    return format.decodeFromString(response)
 }
 
 @Serializable

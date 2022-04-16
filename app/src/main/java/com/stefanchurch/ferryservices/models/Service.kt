@@ -9,7 +9,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Service(
     @SerialName("service_id") val serviceID: Int,
-    @SerialName("sort_order") val sortOrder: Int,
     val area: String,
     val route: String,
     @SerialName("status") val statusValue: Int,
@@ -26,7 +25,6 @@ data class Service(
         other as Service
 
         if (serviceID != other.serviceID) return false
-        if (sortOrder != other.sortOrder) return false
         if (area != other.area) return false
         if (route != other.route) return false
         if (statusValue != other.statusValue) return false
@@ -41,7 +39,6 @@ data class Service(
 
     override fun hashCode(): Int {
         var result = serviceID
-        result = 31 * result + sortOrder
         result = 31 * result + area.hashCode()
         result = 31 * result + route.hashCode()
         result = 31 * result + statusValue

@@ -85,9 +85,7 @@ private fun convertServicesToRows(
             }
     }
 
-    val subscribedServices = subscribedServiceIDs
-        .mapNotNull { services.find { service -> service.serviceID == it} }
-        .sortedBy { it.sortOrder }
+    val subscribedServices = subscribedServiceIDs.mapNotNull { services.find { service -> service.serviceID == it} }
 
     return if (subscribedServices.isNotEmpty()) {
         listOf(ServiceItem.ServiceItemHeader("Subscribed")) +
