@@ -85,7 +85,7 @@ private fun convertServicesToRows(
             }
     }
 
-    val subscribedServices = subscribedServiceIDs.mapNotNull { services.find { service -> service.serviceID == it} }
+    val subscribedServices = services.filter { subscribedServiceIDs.contains(it.serviceID) }
 
     return if (subscribedServices.isNotEmpty()) {
         listOf(ServiceItem.ServiceItemHeader("Subscribed")) +
