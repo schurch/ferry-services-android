@@ -46,7 +46,7 @@ class FerriesMessagingService: FirebaseMessagingService() {
         intent.putExtra("service_id", serviceId)
         intent.action = System.currentTimeMillis().toString()
 
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT)
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE)
 
         val channelId = "FERRIES_SERVICE_STATUS_UPDATES"
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
