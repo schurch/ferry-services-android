@@ -16,7 +16,8 @@ data class Service(
     @SerialName("last_updated_date") val lastUpdatedDate: String? = null,
     val updated: String? = null,
     @SerialName("additional_info") val additionalInfo: String? = null,
-    val locations: Array<Location>
+    val locations: Array<Location>,
+    val vessels: Array<Vessel>? = null
 ) : Parcelable {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -34,6 +35,9 @@ data class Service(
         if (additionalInfo != other.additionalInfo) return false
         if (!locations.contentEquals(other.locations)) return false
 
+        val vesselsEqual = (vessels ?: emptyArray()).contentEquals(other.vessels ?: emptyArray())
+        if (!vesselsEqual) return false
+
         return true
     }
 
@@ -47,6 +51,7 @@ data class Service(
         result = 31 * result + (updated?.hashCode() ?: 0)
         result = 31 * result + (additionalInfo?.hashCode() ?: 0)
         result = 31 * result + locations.contentHashCode()
+        result = 31 * result + (vessels?.contentHashCode() ?: 0)
         return result
     }
 }

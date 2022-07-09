@@ -56,15 +56,9 @@ class DetailViewModel(
     fun refresh() {
         viewModelScope.launch {
             try {
-                _service.value = servicesRepository.getService(serviceID)
-            } catch (exception: Throwable) {
-                //TODO: Error handling
-            }
-        }
-
-        viewModelScope.launch {
-            try {
-                _vessels.value = servicesRepository.getVessels()
+                val service = servicesRepository.getService(serviceID)
+                _service.value = service
+                _vessels.value = service.vessels ?: emptyArray()
             } catch (exception: Throwable) {
                 //TODO: Error handling
             }

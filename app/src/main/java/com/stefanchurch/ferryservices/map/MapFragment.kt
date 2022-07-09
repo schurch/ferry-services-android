@@ -6,16 +6,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.*
 import com.stefanchurch.ferryservices.R
-import com.stefanchurch.ferryservices.ServicesRepository
 import com.stefanchurch.ferryservices.databinding.MapFragmentBinding
 import io.sentry.Sentry
-import kotlinx.coroutines.launch
 import com.stefanchurch.ferryservices.*
 
 class MapFragment : Fragment() {
@@ -34,31 +31,19 @@ class MapFragment : Fragment() {
         mapView = binding.mapView
         mapView?.onCreate(null)
         mapView?.getMapAsync { googleMap ->
-            context?.let { context ->
-                lifecycleScope.launch {
-                    try {
-                        val markers = ServicesRepository
-                            .getInstance(context)
-                            .getVessels()
-                            .map(::convertVesselToMarkerOptions)
-
-                        markers.forEach { marker ->
-                            googleMap.addMarker(marker)
-                        }
-                    } catch (exception: Throwable) {
-                        // Ignore error
-                    }
-                }
+            val vesselMarkers = (args.service.vessels ?: emptyArray()).map(:: convertVesselToMarkerOptions)
+            vesselMarkers.forEach { marker ->
+                googleMap.addMarker(marker)
             }
 
-            val markers = args.service.locations.map { location ->
+            val locationMarkers = args.service.locations.map { location ->
                 MarkerOptions()
                     .position(LatLng(location.latitude, location.longitude))
                     .title(location.name)
             }
 
             val builder = LatLngBounds.Builder()
-            markers.forEach {
+            locationMarkers.forEach {
                 googleMap.addMarker(it)
                 builder.include(it.position)
             }
