@@ -216,8 +216,8 @@ class DetailFragment : Fragment() {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 TimetableButton(
-                    title = "VIEW WINTER 2021–2022 TIMETABLE",
-                    path = "Timetables/2021/Winter",
+                    title = "VIEW WINTER 2022–2023 TIMETABLE",
+                    path = "Timetables/2022/Winter",
                     serviceID = service.serviceID
                 )
 
