@@ -221,12 +221,6 @@ class DetailFragment : Fragment() {
                     serviceID = service.serviceID
                 )
 
-                TimetableButton(
-                    title = "VIEW SUMMER 2022 TIMETABLE",
-                    path = "Timetables/2022/Summer",
-                    serviceID = service.serviceID
-                )
-
                 Spacer(modifier = Modifier.height(10.dp))
 
                 service.locations.mapNotNull { location ->
