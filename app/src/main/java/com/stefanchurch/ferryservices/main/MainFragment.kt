@@ -107,6 +107,7 @@ class MainFragment : Fragment() {
             val lifecycleObserver = LifecycleEventObserver { _, event ->
                 when (event) {
                     Lifecycle.Event.ON_RESUME -> viewModel.refresh()
+                    else -> { }
                 }
             }
             lifecycle.addObserver(lifecycleObserver)

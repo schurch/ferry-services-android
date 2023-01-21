@@ -72,7 +72,6 @@ fun convertVesselToMarkerOptions(vessel: Vessel) : MarkerOptions {
             DateUtils.FORMAT_ABBREV_RELATIVE
         )
         .toString()
-        .replace(".", "")
 
     return MarkerOptions()
         .title(vessel.name)
