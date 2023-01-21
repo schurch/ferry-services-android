@@ -247,20 +247,27 @@ class DetailFragment : Fragment() {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Image(
-                                    painter = painterResource(
-                                        id = resources.getIdentifier(
-                                            "@drawable/ic__${weather.icon.lowercase()}",
-                                            null,
-                                            requireContext().packageName
-                                        )
-                                    ),
-                                    contentDescription = weather.description,
-                                    contentScale = ContentScale.None,
-                                    modifier = Modifier
-                                        .height(40.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                val iconResourceId = expressionOrNull {
+                                    resources.getIdentifier(
+                                        "@drawable/ic__${weather.icon.lowercase()}",
+                                        null,
+                                        requireContext().packageName
+                                    )
+                                }
+
+                                iconResourceId?.let { iconResourceId ->
+                                    Image(
+                                        painter = painterResource(id = iconResourceId),
+                                        contentDescription = weather.description,
+                                        contentScale = ContentScale.None,
+                                        modifier = Modifier
+                                            .height(40.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                } ?: run {
+                                    Sentry.captureMessage("Missing resource ID for weather icon: ${weather.icon.lowercase()}")
+                                }
+
                                 Text(
                                     text = "${weather.temperatureCelsius}ºC",
                                     color = MaterialTheme.colors.primary,
@@ -370,6 +377,8 @@ class DetailFragment : Fragment() {
         modifier: Modifier
     ) {
         LaunchedEffect(Triple(map, locations, vessels)) {
+            if (context == null) { return@LaunchedEffect  }
+
             val googleMap = map.awaitMap()
 
             googleMap.uiSettings.setAllGesturesEnabled(false)
