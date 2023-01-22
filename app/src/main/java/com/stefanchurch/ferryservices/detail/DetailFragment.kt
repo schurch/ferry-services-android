@@ -256,16 +256,20 @@ class DetailFragment : Fragment() {
                                 }
 
                                 iconResourceId?.let { iconResourceId ->
-                                    Image(
-                                        painter = painterResource(id = iconResourceId),
-                                        contentDescription = weather.description,
-                                        contentScale = ContentScale.None,
-                                        modifier = Modifier
-                                            .height(40.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    if (iconResourceId != 0) {
+                                        Image(
+                                            painter = painterResource(id = iconResourceId),
+                                            contentDescription = weather.description,
+                                            contentScale = ContentScale.None,
+                                            modifier = Modifier
+                                                .height(40.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    } else {
+                                        Sentry.captureMessage("Missing resource ID for weather icon: ${weather.icon.lowercase()}")
+                                    }
                                 } ?: run {
-                                    Sentry.captureMessage("Missing resource ID for weather icon: ${weather.icon.lowercase()}")
+                                    Sentry.captureMessage("Exception getting resource ID for weather icon: ${weather.icon.lowercase()}")
                                 }
 
                                 Text(
