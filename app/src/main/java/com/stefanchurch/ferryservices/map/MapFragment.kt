@@ -25,7 +25,7 @@ class MapFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val binding = MapFragmentBinding.inflate(inflater, container, false)
 
         mapView = binding.mapView

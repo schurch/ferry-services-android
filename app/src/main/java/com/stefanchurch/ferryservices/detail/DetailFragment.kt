@@ -2,7 +2,6 @@ package com.stefanchurch.ferryservices.detail
 
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -216,8 +215,8 @@ class DetailFragment : Fragment() {
                 Spacer(modifier = Modifier.height(10.dp))
 
                 TimetableButton(
-                    title = "VIEW WINTER 2022–2023 TIMETABLE",
-                    path = "Timetables/2022/Winter",
+                    title = "VIEW SUMMER 2023 TIMETABLE",
+                    path = "Timetables/2023/Summer",
                     serviceID = service.serviceID
                 )
 
@@ -255,10 +254,10 @@ class DetailFragment : Fragment() {
                                     )
                                 }
 
-                                iconResourceId?.let { iconResourceId ->
-                                    if (iconResourceId != 0) {
+                                iconResourceId?.let { resourceId ->
+                                    if (resourceId != 0) {
                                         Image(
-                                            painter = painterResource(id = iconResourceId),
+                                            painter = painterResource(id = resourceId),
                                             contentDescription = weather.description,
                                             contentScale = ContentScale.None,
                                             modifier = Modifier
@@ -381,20 +380,16 @@ class DetailFragment : Fragment() {
         modifier: Modifier
     ) {
         LaunchedEffect(Triple(map, locations, vessels)) {
-            if (context == null) { return@LaunchedEffect  }
-
+            val context = context ?: return@LaunchedEffect
             val googleMap = map.awaitMap()
 
             googleMap.uiSettings.setAllGesturesEnabled(false)
             googleMap.setOnMarkerClickListener { true }
 
-            when (context?.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+            when (context.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
                 Configuration.UI_MODE_NIGHT_YES -> {
                     googleMap.setMapStyle(
-                        MapStyleOptions.loadRawResourceStyle(
-                            requireContext(),
-                            R.raw.style_json
-                        )
+                        MapStyleOptions.loadRawResourceStyle(context, R.raw.style_json)
                     )
                 }
                 else -> {
@@ -432,7 +427,7 @@ class DetailFragment : Fragment() {
     }
 
     private fun openPdf(file: String) {
-        val context = context?.let { it } ?: return
+        val context = context ?: return
 
         val timetablesPath = File(context.filesDir, "timetables")
         timetablesPath.mkdir()
@@ -447,11 +442,16 @@ class DetailFragment : Fragment() {
         val timetableUri = getUriForFile(context, "com.scottishferryapp.fileprovider", timetableFile)
         val sendIntent: Intent = Intent().apply {
             action = Intent.ACTION_VIEW
-            type = "application/pdf"
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-            data = timetableUri
+            setDataAndType(timetableUri, "application/pdf")
         }
-        startActivity(sendIntent)
+
+        try {
+            startActivity(sendIntent)
+        } catch (exception: Throwable) {
+            // TODO: Show error
+            Sentry.captureException(exception)
+        }
     }
 
     private fun navigate(direction: NavDirections) {
