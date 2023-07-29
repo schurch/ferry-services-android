@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
@@ -51,6 +52,10 @@ import com.stefanchurch.ferryservices.models.Weather
 import com.stefanchurch.ferryservices.models.departuresGroupedByDestination
 import io.sentry.Sentry
 import java.io.File
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlin.math.min
 
 class DetailFragment : Fragment() {
@@ -217,7 +222,9 @@ class DetailFragment : Fragment() {
         Spacer(modifier = Modifier.height(20.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().height(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
@@ -251,7 +258,7 @@ class DetailFragment : Fragment() {
             Text(
                 text = location.name,
                 color = MaterialTheme.colors.secondary,
-                style = MaterialTheme.typography.h6
+                style = MaterialTheme.typography.h5
             )
 
             location.weather?.let { weather ->
@@ -269,35 +276,50 @@ class DetailFragment : Fragment() {
                     Text(
                         text = location.name,
                         color = MaterialTheme.colors.secondary,
-                        style = MaterialTheme.typography.body1
+                        style = MaterialTheme.typography.h6
                     )
-                    Text(text = "->")
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = "to",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colors.secondary
+                    )
                     Text(
                         text = scheduledDepartures.first().destination.name,
                         color = MaterialTheme.colors.secondary,
-                        style = MaterialTheme.typography.body1
+                        style = MaterialTheme.typography.h6
                     )
                 }
 
+                Spacer(modifier = Modifier.height(5.dp))
+
                 scheduledDepartures.map { scheduledDeparture ->
+                    fun formatTime(timeString: String): String {
+                        return LocalDateTime
+                            .parse(
+                                timeString,
+                                DateTimeFormatter.ISO_DATE_TIME
+                            )
+                            .atZone(ZoneId.of("Europe/London"))
+                            .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
+                    }
+
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = scheduledDeparture.departure,
+                            text = formatTime(scheduledDeparture.departure),
                             color = MaterialTheme.colors.secondary,
-                            style = MaterialTheme.typography.body2
+                            style = MaterialTheme.typography.body1
                         )
                         Text(
-                            text = scheduledDeparture.arrival,
+                            text = formatTime(scheduledDeparture.arrival),
                             color = MaterialTheme.colors.secondary,
-                            style = MaterialTheme.typography.body2
+                            style = MaterialTheme.typography.body1
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -414,7 +436,11 @@ class DetailFragment : Fragment() {
     }
 
     @Composable
-    private fun LocationsMapView(locations: Array<Location>, vessels: Array<Vessel>, modifier: Modifier) {
+    private fun LocationsMapView(
+        locations: Array<Location>,
+        vessels: Array<Vessel>,
+        modifier: Modifier
+    ) {
         // The MapView lifecycle is handled by this composable. As the MapView also needs to be updated
         // with input from Compose UI, those updates are encapsulated into the MapViewContainer
         // composable. In this way, when an update to the MapView happens, this composable won't
@@ -443,6 +469,7 @@ class DetailFragment : Fragment() {
                         MapStyleOptions.loadRawResourceStyle(context, R.raw.style_json)
                     )
                 }
+
                 else -> {
                     googleMap.setMapStyle(null)
                 }
@@ -490,7 +517,8 @@ class DetailFragment : Fragment() {
             }
         }
 
-        val timetableUri = getUriForFile(context, "com.scottishferryapp.fileprovider", timetableFile)
+        val timetableUri =
+            getUriForFile(context, "com.scottishferryapp.fileprovider", timetableFile)
         val sendIntent: Intent = Intent().apply {
             action = Intent.ACTION_VIEW
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
