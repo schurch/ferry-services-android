@@ -45,7 +45,10 @@ import com.google.maps.android.ktx.awaitMap
 import com.stefanchurch.ferryservices.*
 import com.stefanchurch.ferryservices.R
 import com.stefanchurch.ferryservices.models.Location
+import com.stefanchurch.ferryservices.models.Service
 import com.stefanchurch.ferryservices.models.Vessel
+import com.stefanchurch.ferryservices.models.Weather
+import com.stefanchurch.ferryservices.models.departuresGroupedByDestination
 import io.sentry.Sentry
 import java.io.File
 import kotlin.math.min
@@ -95,15 +98,13 @@ class DetailFragment : Fragment() {
     private fun DetailScreen(viewModel: DetailViewModel) {
         viewModel.service.value?.let { service ->
             Column(
-                modifier =
-                Modifier
-                    .padding(all = 20.dp)
-                    .verticalScroll(rememberScrollState())
+                modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
                 Box(
                     Modifier
                         .height(200.dp)
-                        .fillMaxWidth()) {
+                        .fillMaxWidth()
+                ) {
                     LocationsMapView(
                         locations = service.locations,
                         vessels = viewModel.vessels.value,
@@ -124,195 +125,8 @@ class DetailFragment : Fragment() {
                             }
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
-                Text(
-                    text = service.area,
-                    color = MaterialTheme.colors.primary,
-                    style = MaterialTheme.typography.h5
-                )
-                Text(
-                    text = service.route,
-                    color = MaterialTheme.colors.secondary,
-                    style = MaterialTheme.typography.h6
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-
-                val hasAdditionalInfo = ((service.additionalInfo?.length) ?: 0) > 0
-
-                val modifier = if (hasAdditionalInfo)
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = rememberRipple(bounded = true),
-                            onClick = {
-                                navigate(
-                                    DetailFragmentDirections.actionDetailFragmentToAdditional(
-                                        service
-                                    )
-                                )
-                            }
-                        )
-                else Modifier.fillMaxWidth()
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = modifier
-                ) {
-                    val color = when (service.status) {
-                        Status.NORMAL -> colorResource(id = R.color.colorStatusNormal)
-                        Status.DISRUPTED -> colorResource(id = R.color.colorStatusDisrupted)
-                        Status.CANCELLED -> colorResource(id = R.color.colorStatusCancelled)
-                        Status.UNKNOWN -> colorResource(id = R.color.colorStatusUnknown)
-                    }
-                    Canvas(modifier = Modifier.size(25.dp), onDraw = {
-                        drawCircle(color = color)
-                    })
-                    Spacer(modifier = Modifier.width(15.dp))
-                    val text = when (service.status) {
-                        Status.NORMAL -> "There are currently no disruptions with this service"
-                        Status.DISRUPTED -> "There are disruptions with this service"
-                        Status.CANCELLED -> "Sailings have been cancelled for this service"
-                        Status.UNKNOWN -> "Unable to fetch the disruption status for this service"
-                    }
-                    Text(
-                        text = text,
-                        color = MaterialTheme.colors.secondary,
-                        style = MaterialTheme.typography.body1,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
-                    if (hasAdditionalInfo) {
-                        Spacer(modifier = Modifier.width(15.dp))
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            tint = MaterialTheme.colors.secondary,
-                            contentDescription = "Additional Info"
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(20.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().height(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = "Subscribe to updates",
-                        color = MaterialTheme.colors.secondary,
-                        style = MaterialTheme.typography.body1
-                    )
-                    Switch(
-                        checked = viewModel.isSubscribed.value,
-                        onCheckedChange = { newValue ->
-                            viewModel.updatedSubscribedStatus(newValue)
-                        },
-                        enabled = viewModel.subscribedEnabled.value,
-                        colors = SwitchDefaults.colors(checkedThumbColor = colorResource(id = R.color.colorAccent))
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                TimetableButton(
-                    title = "VIEW SUMMER 2023 TIMETABLE",
-                    path = "Timetables/2023/Summer",
-                    serviceID = service.serviceID
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                service.locations.mapNotNull { location ->
-                    location.weather?.let { weather ->
-                        Pair(location.name, weather)
-                    }
-                }.forEach { (name, weather) ->
-                    Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = name,
-                        color = MaterialTheme.colors.secondary,
-                        style = MaterialTheme.typography.h6
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                val iconResourceId = expressionOrNull {
-                                    resources.getIdentifier(
-                                        "@drawable/ic__${weather.icon.lowercase()}",
-                                        null,
-                                        requireContext().packageName
-                                    )
-                                }
-
-                                iconResourceId?.let { resourceId ->
-                                    if (resourceId != 0) {
-                                        Image(
-                                            painter = painterResource(id = resourceId),
-                                            contentDescription = weather.description,
-                                            contentScale = ContentScale.None,
-                                            modifier = Modifier
-                                                .height(40.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                    } else {
-                                        Sentry.captureMessage("Missing resource ID for weather icon: ${weather.icon.lowercase()}")
-                                    }
-                                } ?: run {
-                                    Sentry.captureMessage("Exception getting resource ID for weather icon: ${weather.icon.lowercase()}")
-                                }
-
-                                Text(
-                                    text = "${weather.temperatureCelsius}ºC",
-                                    color = MaterialTheme.colors.primary,
-                                    style = MaterialTheme.typography.h6
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = weather.description,
-                                color = MaterialTheme.colors.secondary,
-                                style = MaterialTheme.typography.body1
-                            )
-                        }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.wind),
-                                    contentDescription = "Wind direction arrow",
-                                    contentScale = ContentScale.None,
-                                    modifier = Modifier
-                                        .rotate(weather.windDirection.toFloat() + 180)
-                                        .height(40.dp)
-                                )
-                                Spacer(modifier = Modifier.width(15.dp))
-                                Text(
-                                    text = "${weather.windSpeedMph} MPH",
-                                    color = MaterialTheme.colors.primary,
-                                    style = MaterialTheme.typography.h6
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "${weather.windDirectionCardinal} Wind",
-                                color = MaterialTheme.colors.secondary,
-                                style = MaterialTheme.typography.body1
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
+                Column(modifier = Modifier.padding(all = 20.dp)) {
+                    DetailBody(viewModel = viewModel, service = service)
                 }
             }
         } ?: run {
@@ -325,6 +139,243 @@ class DetailFragment : Fragment() {
             ) {
                 Text(
                     text = "Loading...",
+                    color = MaterialTheme.colors.secondary,
+                    style = MaterialTheme.typography.body1
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun DetailBody(viewModel: DetailViewModel, service: Service) {
+        Text(
+            text = service.area,
+            color = MaterialTheme.colors.primary,
+            style = MaterialTheme.typography.h5
+        )
+        Text(
+            text = service.route,
+            color = MaterialTheme.colors.secondary,
+            style = MaterialTheme.typography.h6
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
+        val hasAdditionalInfo = ((service.additionalInfo?.length) ?: 0) > 0
+
+        val modifier = if (hasAdditionalInfo)
+            Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = rememberRipple(bounded = true),
+                    onClick = {
+                        navigate(
+                            DetailFragmentDirections.actionDetailFragmentToAdditional(
+                                service
+                            )
+                        )
+                    }
+                )
+        else Modifier.fillMaxWidth()
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = modifier
+        ) {
+            val color = when (service.status) {
+                Status.NORMAL -> colorResource(id = R.color.colorStatusNormal)
+                Status.DISRUPTED -> colorResource(id = R.color.colorStatusDisrupted)
+                Status.CANCELLED -> colorResource(id = R.color.colorStatusCancelled)
+                Status.UNKNOWN -> colorResource(id = R.color.colorStatusUnknown)
+            }
+            Canvas(modifier = Modifier.size(25.dp), onDraw = {
+                drawCircle(color = color)
+            })
+            Spacer(modifier = Modifier.width(15.dp))
+            val text = when (service.status) {
+                Status.NORMAL -> "There are currently no disruptions with this service"
+                Status.DISRUPTED -> "There are disruptions with this service"
+                Status.CANCELLED -> "Sailings have been cancelled for this service"
+                Status.UNKNOWN -> "Unable to fetch the disruption status for this service"
+            }
+            Text(
+                text = text,
+                color = MaterialTheme.colors.secondary,
+                style = MaterialTheme.typography.body1,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            if (hasAdditionalInfo) {
+                Spacer(modifier = Modifier.width(15.dp))
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    tint = MaterialTheme.colors.secondary,
+                    contentDescription = "Additional Info"
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().height(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Subscribe to updates",
+                color = MaterialTheme.colors.secondary,
+                style = MaterialTheme.typography.body1
+            )
+            Switch(
+                checked = viewModel.isSubscribed.value,
+                onCheckedChange = { newValue ->
+                    viewModel.updatedSubscribedStatus(newValue)
+                },
+                enabled = viewModel.subscribedEnabled.value,
+                colors = SwitchDefaults.colors(checkedThumbColor = colorResource(id = R.color.colorAccent))
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        TimetableButton(
+            title = "VIEW SUMMER 2023 TIMETABLE",
+            path = "Timetables/2023/Summer",
+            serviceID = service.serviceID
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        service.locations.mapNotNull { location ->
+            Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = location.name,
+                color = MaterialTheme.colors.secondary,
+                style = MaterialTheme.typography.h6
+            )
+
+            location.weather?.let { weather ->
+                Spacer(modifier = Modifier.height(10.dp))
+                Weather(weather)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            location.departuresGroupedByDestination().map { scheduledDepartures ->
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = location.name,
+                        color = MaterialTheme.colors.secondary,
+                        style = MaterialTheme.typography.body1
+                    )
+                    Text(text = "->")
+                    Text(
+                        text = scheduledDepartures.first().destination.name,
+                        color = MaterialTheme.colors.secondary,
+                        style = MaterialTheme.typography.body1
+                    )
+                }
+
+                scheduledDepartures.map { scheduledDeparture ->
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = scheduledDeparture.departure,
+                            color = MaterialTheme.colors.secondary,
+                            style = MaterialTheme.typography.body2
+                        )
+                        Text(
+                            text = scheduledDeparture.arrival,
+                            color = MaterialTheme.colors.secondary,
+                            style = MaterialTheme.typography.body2
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+
+    @Composable
+    private fun Weather(weather: Weather) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val iconResourceId = expressionOrNull {
+                        resources.getIdentifier(
+                            "@drawable/ic__${weather.icon.lowercase()}",
+                            null,
+                            requireContext().packageName
+                        )
+                    }
+
+                    iconResourceId?.let { resourceId ->
+                        if (resourceId != 0) {
+                            Image(
+                                painter = painterResource(id = resourceId),
+                                contentDescription = weather.description,
+                                contentScale = ContentScale.None,
+                                modifier = Modifier
+                                    .height(40.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        } else {
+                            Sentry.captureMessage("Missing resource ID for weather icon: ${weather.icon.lowercase()}")
+                        }
+                    } ?: run {
+                        Sentry.captureMessage("Exception getting resource ID for weather icon: ${weather.icon.lowercase()}")
+                    }
+
+                    Text(
+                        text = "${weather.temperatureCelsius}ºC",
+                        color = MaterialTheme.colors.primary,
+                        style = MaterialTheme.typography.h6
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = weather.description,
+                    color = MaterialTheme.colors.secondary,
+                    style = MaterialTheme.typography.body1
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.wind),
+                        contentDescription = "Wind direction arrow",
+                        contentScale = ContentScale.None,
+                        modifier = Modifier
+                            .rotate(weather.windDirection.toFloat() + 180)
+                            .height(40.dp)
+                    )
+                    Spacer(modifier = Modifier.width(15.dp))
+                    Text(
+                        text = "${weather.windSpeedMph} MPH",
+                        color = MaterialTheme.colors.primary,
+                        style = MaterialTheme.typography.h6
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "${weather.windDirectionCardinal} Wind",
                     color = MaterialTheme.colors.secondary,
                     style = MaterialTheme.typography.body1
                 )
