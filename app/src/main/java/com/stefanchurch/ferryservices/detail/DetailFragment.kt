@@ -52,11 +52,13 @@ import com.stefanchurch.ferryservices.models.Weather
 import com.stefanchurch.ferryservices.models.departuresGroupedByDestination
 import io.sentry.Sentry
 import java.io.File
-import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.util.Locale
 import kotlin.math.min
+import android.text.format.DateFormat
+import androidx.compose.ui.graphics.Color
 
 class DetailFragment : Fragment() {
 
@@ -163,10 +165,10 @@ class DetailFragment : Fragment() {
             color = MaterialTheme.colors.secondary,
             style = MaterialTheme.typography.h6
         )
-        Spacer(modifier = Modifier.height(20.dp))
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         val hasAdditionalInfo = ((service.additionalInfo?.length) ?: 0) > 0
-
         val modifier = if (hasAdditionalInfo)
             Modifier
                 .fillMaxWidth()
@@ -219,7 +221,9 @@ class DetailFragment : Fragment() {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(20.dp))
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -270,6 +274,7 @@ class DetailFragment : Fragment() {
 
             location.departuresGroupedByDestination().map { scheduledDepartures ->
                 Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -291,38 +296,57 @@ class DetailFragment : Fragment() {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(5.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-                scheduledDepartures.map { scheduledDeparture ->
-                    fun formatTime(timeString: String): String {
-                        return LocalDateTime
-                            .parse(
-                                timeString,
-                                DateTimeFormatter.ISO_DATE_TIME
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    scheduledDepartures.map { scheduledDeparture ->
+                        fun formatTime(timeString: String): String {
+                            val formatter = when (DateFormat.is24HourFormat(context)) {
+                                true -> DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+                                false -> DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
+                            }
+
+                            return ZonedDateTime.parse(timeString, DateTimeFormatter.ISO_DATE_TIME)
+                                .withZoneSameInstant(ZoneId.of("Europe/London"))
+                                .format(formatter)
+                        }
+
+                        var currentTime = ZonedDateTime.now(ZoneId.of("UTC"))
+                        var departureTime = ZonedDateTime.parse(scheduledDeparture.departure, DateTimeFormatter.ISO_DATE_TIME)
+
+                        var color = when (departureTime > currentTime) {
+                            true -> MaterialTheme.colors.secondary
+                            false -> when (context?.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+                                Configuration.UI_MODE_NIGHT_YES -> Color.DarkGray
+                                Configuration.UI_MODE_NIGHT_NO -> Color.LightGray
+                                else -> Color.LightGray
+                            }
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = formatTime(scheduledDeparture.departure),
+                                color = color,
+                                style = MaterialTheme.typography.body1
                             )
-                            .atZone(ZoneId.of("Europe/London"))
-                            .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
-                    }
-
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = formatTime(scheduledDeparture.departure),
-                            color = MaterialTheme.colors.secondary,
-                            style = MaterialTheme.typography.body1
-                        )
-                        Text(
-                            text = formatTime(scheduledDeparture.arrival),
-                            color = MaterialTheme.colors.secondary,
-                            style = MaterialTheme.typography.body1
-                        )
+                            Text(
+                                text = formatTime(scheduledDeparture.arrival),
+                                color = color,
+                                style = MaterialTheme.typography.body1
+                            )
+                        }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(2.dp))
         }
     }
 
