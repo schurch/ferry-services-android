@@ -1,6 +1,7 @@
 package com.stefanchurch.ferryservices
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
@@ -18,6 +19,10 @@ private val DarkColors = darkColors(
     secondary = Color(0xFFB9B9B9),
     secondaryVariant = Color(0xFF575757)
 )
+
+val Colors.dullText: Color
+    get() = if (isLight) Color.Red else Color.Yellow
+
 
 @Composable
 fun FerriesTheme(

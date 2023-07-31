@@ -59,6 +59,7 @@ import java.util.Locale
 import kotlin.math.min
 import android.text.format.DateFormat
 import androidx.compose.ui.graphics.Color
+import java.time.Instant
 
 class DetailFragment : Fragment() {
 
@@ -302,27 +303,20 @@ class DetailFragment : Fragment() {
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     scheduledDepartures.map { scheduledDeparture ->
-                        fun formatTime(timeString: String): String {
+                        fun formatTime(time: Instant): String {
                             val formatter = when (DateFormat.is24HourFormat(context)) {
                                 true -> DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
                                 false -> DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
                             }
 
-                            return ZonedDateTime.parse(timeString, DateTimeFormatter.ISO_DATE_TIME)
-                                .withZoneSameInstant(ZoneId.of("Europe/London"))
+                            return time
+                                .atZone(ZoneId.of("Europe/London"))
                                 .format(formatter)
                         }
 
-                        var currentTime = ZonedDateTime.now(ZoneId.of("UTC"))
-                        var departureTime = ZonedDateTime.parse(scheduledDeparture.departure, DateTimeFormatter.ISO_DATE_TIME)
-
-                        var color = when (departureTime > currentTime) {
+                        val color = when (scheduledDeparture.departure > Instant.now()) {
                             true -> MaterialTheme.colors.secondary
-                            false -> when (context?.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
-                                Configuration.UI_MODE_NIGHT_YES -> Color.DarkGray
-                                Configuration.UI_MODE_NIGHT_NO -> Color.LightGray
-                                else -> Color.LightGray
-                            }
+                            false -> MaterialTheme.colors.dullText
                         }
 
                         Row(
