@@ -59,6 +59,7 @@ import java.util.Locale
 import kotlin.math.min
 import android.text.format.DateFormat
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 import com.stefanchurch.ferryservices.models.ScheduledDeparture
 import java.time.Instant
 
@@ -135,7 +136,7 @@ class DetailFragment : Fragment() {
                     )
                 }
                 Column(modifier = Modifier.padding(all = 20.dp)) {
-                    DetailBody(viewModel = viewModel, service = service)
+                    DetailBody(service = service)
                 }
             }
         } ?: run {
@@ -156,7 +157,7 @@ class DetailFragment : Fragment() {
     }
 
     @Composable
-    private fun DetailBody(viewModel: DetailViewModel, service: Service) {
+    private fun DetailBody(service: Service) {
         Text(
             text = service.area,
             color = MaterialTheme.colors.primary,
@@ -170,6 +171,27 @@ class DetailFragment : Fragment() {
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        DisruptionInfoRow(service = service)
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        SubscribeToUpdatesRow()
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        TimetableButton(
+            title = "VIEW SUMMER 2023 TIMETABLE",
+            path = "Timetables/2023/Summer",
+            serviceID = service.serviceID
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        service.locations.mapNotNull { Location(location = it)}
+    }
+
+    @Composable
+    private fun DisruptionInfoRow(service: Service) {
         val hasAdditionalInfo = ((service.additionalInfo?.length) ?: 0) > 0
         val modifier = if (hasAdditionalInfo)
             Modifier
@@ -223,9 +245,10 @@ class DetailFragment : Fragment() {
                 )
             }
         }
+    }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
+    @Composable
+    private fun SubscribeToUpdatesRow() {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -247,18 +270,6 @@ class DetailFragment : Fragment() {
                 colors = SwitchDefaults.colors(checkedThumbColor = colorResource(id = R.color.colorAccent))
             )
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        TimetableButton(
-            title = "VIEW SUMMER 2023 TIMETABLE",
-            path = "Timetables/2023/Summer",
-            serviceID = service.serviceID
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        service.locations.mapNotNull { Location(location = it)}
     }
 
     @Composable
