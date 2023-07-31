@@ -59,6 +59,7 @@ import java.util.Locale
 import kotlin.math.min
 import android.text.format.DateFormat
 import androidx.compose.ui.graphics.Color
+import com.stefanchurch.ferryservices.models.ScheduledDeparture
 import java.time.Instant
 
 class DetailFragment : Fragment() {
@@ -257,90 +258,106 @@ class DetailFragment : Fragment() {
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        service.locations.mapNotNull { location ->
-            Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
+        service.locations.mapNotNull { Location(location = it)}
+    }
+
+    @Composable
+    private fun Location(location: Location) {
+        Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = location.name,
+            color = MaterialTheme.colors.secondary,
+            style = MaterialTheme.typography.h5
+        )
+
+        location.weather?.let { weather ->
             Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = location.name,
-                color = MaterialTheme.colors.secondary,
-                style = MaterialTheme.typography.h5
+            Weather(weather)
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        location.departuresGroupedByDestination().map { scheduledDepartures ->
+            DepartureHeader(
+                fromLocationName = location.name,
+                toLocationName = scheduledDepartures.first().destination.name
             )
 
-            location.weather?.let { weather ->
-                Spacer(modifier = Modifier.height(10.dp))
-                Weather(weather)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                scheduledDepartures.map { scheduledDeparture ->
+                    DepartureRow(departure = scheduledDeparture)
+                }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
-            location.departuresGroupedByDestination().map { scheduledDepartures ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = location.name,
-                        color = MaterialTheme.colors.secondary,
-                        style = MaterialTheme.typography.h6
-                    )
-                    Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "to",
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colors.secondary
-                    )
-                    Text(
-                        text = scheduledDepartures.first().destination.name,
-                        color = MaterialTheme.colors.secondary,
-                        style = MaterialTheme.typography.h6
-                    )
-                }
+        Spacer(modifier = Modifier.height(2.dp))
+    }
 
-                Spacer(modifier = Modifier.height(4.dp))
+    @Composable
+    private fun DepartureHeader(fromLocationName: String, toLocationName: String) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = fromLocationName,
+                color = MaterialTheme.colors.secondary,
+                style = MaterialTheme.typography.h6
+            )
+            Icon(
+                Icons.Default.ArrowForward,
+                contentDescription = "to",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colors.secondary
+            )
+            Text(
+                text = toLocationName,
+                color = MaterialTheme.colors.secondary,
+                style = MaterialTheme.typography.h6
+            )
+        }
+    }
 
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    scheduledDepartures.map { scheduledDeparture ->
-                        fun formatTime(time: Instant): String {
-                            val formatter = when (DateFormat.is24HourFormat(context)) {
-                                true -> DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
-                                false -> DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
-                            }
-
-                            return time
-                                .atZone(ZoneId.of("Europe/London"))
-                                .format(formatter)
-                        }
-
-                        val color = when (scheduledDeparture.departure > Instant.now()) {
-                            true -> MaterialTheme.colors.secondary
-                            false -> MaterialTheme.colors.dullText
-                        }
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = formatTime(scheduledDeparture.departure),
-                                color = color,
-                                style = MaterialTheme.typography.body1
-                            )
-                            Text(
-                                text = formatTime(scheduledDeparture.arrival),
-                                color = color,
-                                style = MaterialTheme.typography.body1
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
+    @Composable
+    private fun DepartureRow(departure: ScheduledDeparture) {
+        fun formatTime(time: Instant): String {
+            val formatter = when (DateFormat.is24HourFormat(context)) {
+                true -> DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+                false -> DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault())
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
+            return time
+                .atZone(ZoneId.of("Europe/London"))
+                .format(formatter)
+        }
+
+        val color = when (departure.departure > Instant.now()) {
+            true -> MaterialTheme.colors.secondary
+            false -> MaterialTheme.colors.dullText
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = formatTime(departure.departure),
+                color = color,
+                style = MaterialTheme.typography.body1
+            )
+            Text(
+                text = formatTime(departure.arrival),
+                color = color,
+                style = MaterialTheme.typography.body1
+            )
         }
     }
 
