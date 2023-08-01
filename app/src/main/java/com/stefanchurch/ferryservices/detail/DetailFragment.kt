@@ -110,33 +110,24 @@ class DetailFragment : Fragment() {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
-                Box(
-                    Modifier
-                        .height(200.dp)
-                        .fillMaxWidth()
+                Map(service = service)
+
+                Column(
+                    modifier = Modifier.padding(all = 20.dp)
                 ) {
-                    LocationsMapView(
-                        locations = service.locations,
-                        vessels = viewModel.vessels.value,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
+                    Header(service = service)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    DisruptionInfoRow(service = service)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    SubscribeToUpdatesRow()
+                    Spacer(modifier = Modifier.height(10.dp))
+                    TimetableButton(
+                        title = "VIEW SUMMER 2023 TIMETABLE",
+                        path = "Timetables/2023/Summer",
+                        serviceID = service.serviceID
                     )
-                    Spacer(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                            .clickable {
-                                val direction = DetailFragmentDirections.actionDetailFragmentToMap(
-                                    service = service,
-                                    title = service.route
-                                )
-                                navigate(direction)
-                            }
-                    )
-                }
-                Column(modifier = Modifier.padding(all = 20.dp)) {
-                    DetailBody(service = service)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    service.locations.mapNotNull { Location(location = it)}
                 }
             }
         } ?: run {
@@ -157,7 +148,36 @@ class DetailFragment : Fragment() {
     }
 
     @Composable
-    private fun DetailBody(service: Service) {
+    private fun Map(service: Service) {
+        Box(
+            Modifier
+                .height(200.dp)
+                .fillMaxWidth()
+        ) {
+            LocationsMapView(
+                locations = service.locations,
+                vessels = viewModel.vessels.value,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+            )
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .clickable {
+                        val direction = DetailFragmentDirections.actionDetailFragmentToMap(
+                            service = service,
+                            title = service.route
+                        )
+                        navigate(direction)
+                    }
+            )
+        }
+    }
+
+    @Composable
+    private fun Header(service: Service) {
         Text(
             text = service.area,
             color = MaterialTheme.colors.primary,
@@ -168,26 +188,6 @@ class DetailFragment : Fragment() {
             color = MaterialTheme.colors.secondary,
             style = MaterialTheme.typography.h6
         )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        DisruptionInfoRow(service = service)
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        SubscribeToUpdatesRow()
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        TimetableButton(
-            title = "VIEW SUMMER 2023 TIMETABLE",
-            path = "Timetables/2023/Summer",
-            serviceID = service.serviceID
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        service.locations.mapNotNull { Location(location = it)}
     }
 
     @Composable
