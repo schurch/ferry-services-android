@@ -21,7 +21,7 @@ private val DarkColors = darkColors(
 )
 
 val Colors.dullText: Color
-    get() = if (isLight) Color.Red else Color.Yellow
+    get() = if (isLight) Color(0xFFAAAAAA) else Color(0xFF888888)
 
 
 @Composable

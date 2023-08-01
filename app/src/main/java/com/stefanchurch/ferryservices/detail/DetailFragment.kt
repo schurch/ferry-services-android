@@ -279,7 +279,7 @@ class DetailFragment : Fragment() {
         Text(
             text = location.name,
             color = MaterialTheme.colors.secondary,
-            style = MaterialTheme.typography.h5
+            style = MaterialTheme.typography.h6
         )
 
         location.weather?.let { weather ->
@@ -319,9 +319,9 @@ class DetailFragment : Fragment() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = fromLocationName,
+                text = "$fromLocationName departure",
                 color = MaterialTheme.colors.secondary,
-                style = MaterialTheme.typography.h6
+                style = MaterialTheme.typography.body1
             )
             Icon(
                 Icons.Default.ArrowForward,
@@ -330,9 +330,9 @@ class DetailFragment : Fragment() {
                 tint = MaterialTheme.colors.secondary
             )
             Text(
-                text = toLocationName,
+                text = "$toLocationName arrival",
                 color = MaterialTheme.colors.secondary,
-                style = MaterialTheme.typography.h6
+                style = MaterialTheme.typography.body1
             )
         }
     }
