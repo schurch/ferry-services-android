@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +24,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider.getUriForFile
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -34,41 +32,33 @@ import androidx.navigation.NavDirections
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.MarkerOptions
 import com.stefanchurch.ferryservices.databinding.DetailFragmentBinding
 import com.stefanchurch.ferryservices.models.Status
 import com.stefanchurch.ferryservices.models.status
-import com.google.maps.android.ktx.awaitMap
 import com.stefanchurch.ferryservices.*
 import com.stefanchurch.ferryservices.R
-import com.stefanchurch.ferryservices.models.Location
 import com.stefanchurch.ferryservices.models.Service
-import com.stefanchurch.ferryservices.models.Vessel
 import com.stefanchurch.ferryservices.models.Weather
 import com.stefanchurch.ferryservices.models.departuresGroupedByDestination
 import io.sentry.Sentry
 import java.io.File
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.min
 import android.text.format.DateFormat
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapEffect
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
 import com.stefanchurch.ferryservices.models.ScheduledDeparture
 import java.time.Instant
 
@@ -113,30 +103,123 @@ class DetailFragment : Fragment() {
         viewModel.refresh()
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun DetailScreen(viewModel: DetailViewModel) {
         viewModel.service.value?.let { service ->
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ) {
-                Map(service = service)
+            val horizontalPadding = 20.dp
 
-                Column(
-                    modifier = Modifier.padding(all = 20.dp)
-                ) {
-                    Header(service = service)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    DisruptionInfoRow(service = service)
-                    Spacer(modifier = Modifier.height(10.dp))
-                    SubscribeToUpdatesRow()
-                    Spacer(modifier = Modifier.height(10.dp))
-                    TimetableButton(
-                        title = "VIEW SUMMER 2023 TIMETABLE",
-                        path = "Timetables/2023/Summer",
-                        serviceID = service.serviceID
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    service.locations.mapNotNull { Location(location = it)}
+            LazyColumn(
+                modifier = Modifier.background(MaterialTheme.colors.background),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    Map(service = service)
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(5.dp))
+                }
+
+                item {
+                    Column(
+                        Modifier.padding(horizontal = horizontalPadding)
+                    ) {
+                        Header(service = service)
+                    }
+                }
+
+                item {
+                    Column(
+                        Modifier.padding(horizontal = horizontalPadding)
+                    ) {
+                        DisruptionInfoRow(service = service)
+                    }
+                }
+
+                item {
+                    Column(
+                        Modifier.padding(horizontal = horizontalPadding)
+                    ) {
+                        SubscribeToUpdatesRow()
+                    }
+                }
+
+                item {
+                    Column(
+                        Modifier.padding(horizontal = horizontalPadding)
+                    ) {
+                        Divider()
+                        Spacer(modifier = Modifier.height(10.dp))
+                        TimetableButton(
+                            title = "VIEW SUMMER 2023 TIMETABLE",
+                            path = "Timetables/2023/Summer",
+                            serviceID = service.serviceID
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Divider()
+                    }
+                }
+
+                service.locations.mapNotNull { location ->
+                    stickyHeader {
+                        Surface(
+                            Modifier.fillParentMaxWidth(),
+                            color = MaterialTheme.colors.background
+                        ) {
+                            Column(
+                                Modifier.padding(horizontal = horizontalPadding)
+                            ) {
+                                Text(
+                                    text = location.name,
+                                    color = MaterialTheme.colors.secondary,
+                                    style = MaterialTheme.typography.h6
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        location.weather?.let { weather ->
+                            Weather(weather)
+                        }
+                    }
+
+                    location.departuresGroupedByDestination().map { scheduledDepartures ->
+                        stickyHeader {
+                            Surface(
+                                Modifier.fillParentMaxWidth(),
+                                color = MaterialTheme.colors.background
+                            ) {
+                                Column(
+                                    Modifier.padding(horizontal = horizontalPadding)
+                                ) {
+                                    DepartureHeader(
+                                        fromLocationName = location.name,
+                                        toLocationName = scheduledDepartures.first().destination.name
+                                    )
+                                }
+                            }
+                        }
+
+
+                        item {
+                            Column(
+                                modifier = Modifier.padding(horizontal = horizontalPadding),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                scheduledDepartures.map { scheduledDeparture ->
+                                    DepartureRow(departure = scheduledDeparture)
+                                }
+                            }
+                        }
+                    }
+
+                    item { }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         } ?: run {
@@ -333,45 +416,6 @@ class DetailFragment : Fragment() {
     }
 
     @Composable
-    private fun Location(location: Location) {
-        Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(
-            text = location.name,
-            color = MaterialTheme.colors.secondary,
-            style = MaterialTheme.typography.h6
-        )
-
-        location.weather?.let { weather ->
-            Spacer(modifier = Modifier.height(10.dp))
-            Weather(weather)
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        location.departuresGroupedByDestination().map { scheduledDepartures ->
-            DepartureHeader(
-                fromLocationName = location.name,
-                toLocationName = scheduledDepartures.first().destination.name
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                scheduledDepartures.map { scheduledDeparture ->
-                    DepartureRow(departure = scheduledDeparture)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        Spacer(modifier = Modifier.height(2.dp))
-    }
-
-    @Composable
     private fun DepartureHeader(fromLocationName: String, toLocationName: String) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -379,9 +423,10 @@ class DetailFragment : Fragment() {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "$fromLocationName departure",
+                text = "$fromLocationName",
                 color = MaterialTheme.colors.secondary,
-                style = MaterialTheme.typography.body1
+                style = MaterialTheme.typography.body1,
+                textAlign = TextAlign.Left
             )
             Icon(
                 Icons.Default.ArrowForward,
@@ -390,9 +435,10 @@ class DetailFragment : Fragment() {
                 tint = MaterialTheme.colors.secondary
             )
             Text(
-                text = "$toLocationName arrival",
+                text = "$toLocationName",
                 color = MaterialTheme.colors.secondary,
-                style = MaterialTheme.typography.body1
+                style = MaterialTheme.typography.body1,
+                textAlign = TextAlign.Right
             )
         }
     }
@@ -516,13 +562,11 @@ class DetailFragment : Fragment() {
         val containsTimetable = resources.assets.list(path)
             ?.contains("${serviceID}.pdf") ?: false
         if (containsTimetable) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Divider(color = MaterialTheme.colors.secondaryVariant, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
             Column(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .fillMaxHeight()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = rememberRipple(bounded = true),

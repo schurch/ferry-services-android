@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.*
 import androidx.appcompat.widget.SearchView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -120,7 +121,9 @@ class MainFragment : Fragment() {
             state = rememberSwipeRefreshState(viewModel.isRefreshing.value),
             onRefresh = { viewModel.refresh() },
         ) {
-            LazyColumn {
+            LazyColumn(
+                modifier = Modifier.background(MaterialTheme.colors.background)
+            ) {
                 items(viewModel.items.value) { row ->
                     when (row) {
                         is ServiceItem.ServiceItemHeader -> Text(
