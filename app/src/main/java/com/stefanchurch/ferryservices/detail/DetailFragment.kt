@@ -58,8 +58,17 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.min
 import android.text.format.DateFormat
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapEffect
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import com.stefanchurch.ferryservices.models.ScheduledDeparture
 import java.time.Instant
 
@@ -154,13 +163,64 @@ class DetailFragment : Fragment() {
                 .height(200.dp)
                 .fillMaxWidth()
         ) {
-            LocationsMapView(
-                locations = service.locations,
-                vessels = viewModel.vessels.value,
+            GoogleMap(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-            )
+                    .fillMaxSize()
+                    .fillMaxWidth(),
+                uiSettings = MapUiSettings(zoomControlsEnabled = false)
+            ) {
+                service.locations.map { location ->
+                    Marker(
+                        state = MarkerState(position = LatLng(location.latitude, location.longitude)),
+                        title = location.name
+                    )
+                }
+
+                service.vessels?.map { vessel ->
+                    Marker(
+                        state = MarkerState(position = LatLng(vessel.latitude, vessel.longitude)),
+                        icon = BitmapDescriptorFactory.fromResource(R.drawable.ferry),
+                        rotation = (vessel.course ?: 0).toFloat(),
+                        anchor = Offset(0.5f, 0.5f)
+                    )
+                }
+
+                MapEffect { map ->
+                    val context = context ?: return@MapEffect
+
+                    val latLngBuilder = LatLngBounds.Builder()
+                    service.locations.forEach {
+                        latLngBuilder.include(LatLng(it.latitude, it.longitude))
+                    }
+
+                    try {
+                        val width = resources.displayMetrics.widthPixels
+                        val height = resources.displayMetrics.heightPixels
+                        val padding = min(width, height) * 0.15
+                        map.moveCamera(
+                            CameraUpdateFactory.newLatLngBounds(
+                                latLngBuilder.build(),
+                                padding.toInt()
+                            )
+                        )
+                    } catch (exception: Throwable) {
+                        Sentry.captureException(exception)
+                    }
+
+                    when (context.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+                        Configuration.UI_MODE_NIGHT_YES -> {
+                            map.setMapStyle(
+                                MapStyleOptions.loadRawResourceStyle(context, R.raw.style_json)
+                            )
+                        }
+
+                        else -> {
+                            map.setMapStyle(null)
+                        }
+                    }
+                }
+            }
+
             Spacer(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -479,75 +539,6 @@ class DetailFragment : Fragment() {
                 )
             }
         }
-    }
-
-    @Composable
-    private fun LocationsMapView(
-        locations: Array<Location>,
-        vessels: Array<Vessel>,
-        modifier: Modifier
-    ) {
-        // The MapView lifecycle is handled by this composable. As the MapView also needs to be updated
-        // with input from Compose UI, those updates are encapsulated into the MapViewContainer
-        // composable. In this way, when an update to the MapView happens, this composable won't
-        // recompose and the MapView won't need to be recreated.
-        val mapView = rememberMapViewWithLifecycle()
-        MapViewContainer(mapView, locations, vessels, modifier)
-    }
-
-    @Composable
-    private fun MapViewContainer(
-        map: MapView,
-        locations: Array<Location>,
-        vessels: Array<Vessel>,
-        modifier: Modifier
-    ) {
-        LaunchedEffect(Triple(map, locations, vessels)) {
-            val context = context ?: return@LaunchedEffect
-            val googleMap = map.awaitMap()
-
-            googleMap.uiSettings.setAllGesturesEnabled(false)
-            googleMap.setOnMarkerClickListener { true }
-
-            when (context.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
-                Configuration.UI_MODE_NIGHT_YES -> {
-                    googleMap.setMapStyle(
-                        MapStyleOptions.loadRawResourceStyle(context, R.raw.style_json)
-                    )
-                }
-
-                else -> {
-                    googleMap.setMapStyle(null)
-                }
-            }
-
-            googleMap.clear()
-
-            vessels.map(::convertVesselToMarkerOptions).forEach { googleMap.addMarker(it) }
-
-            val latLngBuilder = LatLngBounds.Builder()
-            locations.map { location ->
-                MarkerOptions()
-                    .position(LatLng(location.latitude, location.longitude))
-                    .title(location.name)
-            }.forEach {
-                latLngBuilder.include(it.position)
-                googleMap.addMarker(it)
-            }
-
-            try {
-                val width = resources.displayMetrics.widthPixels
-                val height = resources.displayMetrics.heightPixels
-                val padding = min(width, height) * 0.15
-                googleMap.moveCamera(
-                    CameraUpdateFactory.newLatLngBounds(latLngBuilder.build(), padding.toInt())
-                )
-            } catch (exception: Throwable) {
-                Sentry.captureException(exception)
-            }
-        }
-
-        AndroidView({ map }, modifier = modifier)
     }
 
     private fun openPdf(file: String) {
