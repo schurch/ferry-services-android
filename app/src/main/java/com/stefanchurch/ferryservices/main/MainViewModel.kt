@@ -85,14 +85,23 @@ private fun convertServicesToRows(
             }
     }
 
-    val subscribedServices = services.filter { subscribedServiceIDs.contains(it.serviceID) }
-
-    return if (subscribedServices.isNotEmpty()) {
-        listOf(ServiceItem.ServiceItemHeader("Subscribed")) +
-                subscribedServices.map { ServiceItem.ServiceItemService(it) } +
-                listOf(ServiceItem.ServiceItemHeader("Services")) +
-                services.map { ServiceItem.ServiceItemService(it) }
-    } else {
-        services.map { ServiceItem.ServiceItemService(it) }
+    val groupedServices = groupServicesByOperator(services = services.toList()).flatMap { operatorServices ->
+        val header = ServiceItem.ServiceItemHeader(operatorServices.first().serviceOperator?.name ?: "Services")
+        val servicesItems = operatorServices.map { ServiceItem.ServiceItemService(it) }
+        listOf(header) + servicesItems
     }
+
+    val subscribedServices = services.filter { subscribedServiceIDs.contains(it.serviceID) }
+    return if (subscribedServices.isNotEmpty()) {
+        listOf(ServiceItem.ServiceItemHeader("Subscribed")) + subscribedServices.map { ServiceItem.ServiceItemService(it) } + groupedServices
+    } else {
+        groupedServices
+    }
+}
+
+fun groupServicesByOperator(services: List<Service>): List<List<Service>> {
+    return services
+        .groupBy { it.serviceOperator?.id ?: 0 }
+        .values
+        .sortedBy { it.first().serviceOperator?.name }
 }
