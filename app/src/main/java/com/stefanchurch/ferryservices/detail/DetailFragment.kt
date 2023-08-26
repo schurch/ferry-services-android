@@ -149,15 +149,24 @@ class DetailFragment : Fragment() {
                     Column(
                         Modifier.padding(horizontal = horizontalPadding)
                     ) {
-                        Divider()
-                        Spacer(modifier = Modifier.height(10.dp))
-                        TimetableButton(
-                            title = "VIEW SUMMER 2023 TIMETABLE",
-                            path = "Timetables/2023/Summer",
-                            serviceID = service.serviceID
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Divider()
+                        val path = "Timetables/2023/Summer"
+                        val containsTimetable = resources.assets.list(path)
+                            ?.contains("${service.serviceID}.pdf") ?: false
+                        if (containsTimetable) {
+                            Divider()
+                            Spacer(modifier = Modifier.height(10.dp))
+                            TimetableButton(
+                                title = "VIEW SUMMER 2023 TIMETABLE",
+                                path = path,
+                                serviceID = service.serviceID
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Divider()
+                        } else {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Divider()
+                            Spacer(modifier = Modifier.height(10.dp))
+                        }
                     }
                 }
 
@@ -559,29 +568,25 @@ class DetailFragment : Fragment() {
 
     @Composable
     private fun TimetableButton(title: String, path: String, serviceID: Int) {
-        val containsTimetable = resources.assets.list(path)
-            ?.contains("${serviceID}.pdf") ?: false
-        if (containsTimetable) {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = rememberRipple(bounded = true),
-                        onClick = {
-                            openPdf("${path}/${serviceID}.pdf")
-                        }
-                    )
-            ) {
-                Text(
-                    text = title,
-                    color = colorResource(id = R.color.colorAccent),
-                    style = MaterialTheme.typography.body1,
-                    textAlign = TextAlign.Left
+        Column(
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = rememberRipple(bounded = true),
+                    onClick = {
+                        openPdf("${path}/${serviceID}.pdf")
+                    }
                 )
-            }
+        ) {
+            Text(
+                text = title,
+                color = colorResource(id = R.color.colorAccent),
+                style = MaterialTheme.typography.body1,
+                textAlign = TextAlign.Left
+            )
         }
     }
 
