@@ -12,7 +12,7 @@ private val lightColors = lightColors(
     primary = Color(0xFF000000),
     secondary = Color(0xFF858585),
     secondaryVariant = Color(0xFFE2E2E2),
-    background = Color(0xFFFFFFFF)
+    background = Color(0xFFFFFFFF),
 )
 
 private val darkColors = darkColors(
@@ -23,7 +23,7 @@ private val darkColors = darkColors(
 )
 
 val Colors.dullText: Color
-    get() = if (isLight) Color(0xFFAAAAAA) else Color(0xFF888888)
+    get() = if (isLight) Color(0xFFBBBBBB) else Color(0xFF888888)
 
 
 @Composable

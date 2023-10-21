@@ -51,6 +51,14 @@ import java.util.Locale
 import kotlin.math.min
 import android.text.format.DateFormat
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerColors
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePickerFormatter
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -61,6 +69,8 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.stefanchurch.ferryservices.models.ScheduledDeparture
 import java.time.Instant
+import java.time.format.FormatStyle
+import java.util.Calendar
 
 class DetailFragment : Fragment() {
 
@@ -103,7 +113,7 @@ class DetailFragment : Fragment() {
         viewModel.refresh()
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
     @Composable
     private fun DetailScreen(viewModel: DetailViewModel) {
         viewModel.service.value?.let { service ->
@@ -145,28 +155,115 @@ class DetailFragment : Fragment() {
                     }
                 }
 
+//                item {
+//                    Column(
+//                        Modifier.padding(horizontal = horizontalPadding)
+//                    ) {
+//                        val path = "Timetables/2023/Summer"
+//                        val containsTimetable = resources.assets.list(path)
+//                            ?.contains("${service.serviceID}.pdf") ?: false
+//                        if (containsTimetable) {
+//                            Divider()
+//                            Spacer(modifier = Modifier.height(10.dp))
+//                            TimetableButton(
+//                                title = "VIEW SUMMER 2023 TIMETABLE",
+//                                path = path,
+//                                serviceID = service.serviceID
+//                            )
+//                            Spacer(modifier = Modifier.height(10.dp))
+//                            Divider()
+//                        } else {
+//                            Spacer(modifier = Modifier.height(10.dp))
+//                            Divider()
+//                            Spacer(modifier = Modifier.height(10.dp))
+//                        }
+//                    }
+//                }
+
                 item {
                     Column(
                         Modifier.padding(horizontal = horizontalPadding)
                     ) {
-                        val path = "Timetables/2023/Summer"
-                        val containsTimetable = resources.assets.list(path)
-                            ?.contains("${service.serviceID}.pdf") ?: false
-                        if (containsTimetable) {
-                            Divider()
-                            Spacer(modifier = Modifier.height(10.dp))
-                            TimetableButton(
-                                title = "VIEW SUMMER 2023 TIMETABLE",
-                                path = path,
-                                serviceID = service.serviceID
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Divider()
-                        } else {
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Divider()
-                            Spacer(modifier = Modifier.height(10.dp))
+                        Divider()
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        val datePickerState = rememberDatePickerState()
+                        val showDatePicker = remember {  mutableStateOf(false) }
+
+                        if (showDatePicker.value) {
+                            DatePickerDialog(
+                                onDismissRequest = {
+                                    showDatePicker.value = false
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        showDatePicker.value = false
+                                        viewModel.date = datePickerState.selectedDateMillis ?: Instant.now().toEpochMilli()
+                                        viewModel.refresh()
+                                    }) {
+                                        Text(text = "Confirm")
+                                    }
+                                },
+                                colors = DatePickerDefaults.colors(
+                                    containerColor = MaterialTheme.colors.surface
+                                )
+                            ) {
+                                DatePicker(
+                                    state = datePickerState,
+                                    colors = DatePickerDefaults.colors(
+                                        containerColor = MaterialTheme.colors.surface,
+                                        titleContentColor = MaterialTheme.colors.primary,
+                                        headlineContentColor = MaterialTheme.colors.primary,
+                                        weekdayContentColor = MaterialTheme.colors.primary,
+                                        subheadContentColor = MaterialTheme.colors.primary,
+                                        yearContentColor = MaterialTheme.colors.primary,
+                                        currentYearContentColor = MaterialTheme.colors.primary,
+                                        selectedYearContentColor = MaterialTheme.colors.onPrimary,
+                                        selectedYearContainerColor = colorResource(id = R.color.colorAccent),
+                                        dayContentColor = MaterialTheme.colors.primary,
+                                        disabledDayContentColor = MaterialTheme.colors.primary,
+                                        selectedDayContentColor = MaterialTheme.colors.onPrimary,
+                                        disabledSelectedDayContentColor = MaterialTheme.colors.primary,
+                                        selectedDayContainerColor = colorResource(id = R.color.colorAccent),
+                                        disabledSelectedDayContainerColor = MaterialTheme.colors.primary,
+                                        todayContentColor = MaterialTheme.colors.primary,
+                                        todayDateBorderColor = colorResource(id = R.color.colorAccent),
+                                        dayInSelectionRangeContentColor = MaterialTheme.colors.primary,
+                                        dayInSelectionRangeContainerColor = MaterialTheme.colors.primary
+                                    ),
+                                    showModeToggle = false
+                                )
+                            }
                         }
+
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = rememberRipple(bounded = true),
+                                    onClick = {
+                                        showDatePicker.value = true
+                                    }
+                                )
+                        ) {
+                            val dateString = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)
+                                .withZone(Calendar.getInstance().timeZone.toZoneId())
+                                .format(Instant.ofEpochMilli(viewModel.date))
+                            Text(
+                                text = "SCHEDULED DEPARTURES ON $dateString",
+                                color = colorResource(id = R.color.colorAccent),
+                                style = MaterialTheme.typography.body1,
+                                textAlign = TextAlign.Left
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Divider()
                     }
                 }
 

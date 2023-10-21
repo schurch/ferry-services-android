@@ -1,5 +1,7 @@
 package com.stefanchurch.ferryservices.detail
 
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -14,8 +16,11 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.time.Instant
+import java.time.OffsetDateTime
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 class DetailViewModel(
     serviceDetailArgument: ServiceDetailArgument,
     private val servicesRepository: ServicesRepository,
@@ -34,9 +39,7 @@ class DetailViewModel(
     val isSubscribed: State<Boolean>
         get() = _isSubscribed
 
-    private val _vessels: MutableState<Array<Vessel>> = mutableStateOf(arrayOf())
-    val vessels: State<Array<Vessel>>
-        get() = _vessels
+    var date: Long = Instant.now().toEpochMilli()
 
     private val serviceID: Int = serviceDetailArgument.serviceID
     private val installationID = preferences.lookupString(R.string.preferences_installation_id_key)?.let { UUID.fromString(it) }
@@ -56,9 +59,8 @@ class DetailViewModel(
     fun refresh() {
         viewModelScope.launch {
             try {
-                val service = servicesRepository.getService(serviceID)
+                val service = servicesRepository.getService(serviceID = serviceID, date = date)
                 _service.value = service
-                _vessels.value = service.vessels ?: emptyArray()
             } catch (exception: Throwable) {
                 //TODO: Error handling
             }

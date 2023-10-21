@@ -1,6 +1,7 @@
 package com.stefanchurch.ferryservices
 
 import android.content.Context
+import android.net.Uri
 import com.android.volley.Request
 import com.android.volley.RequestQueue
 import com.android.volley.toolbox.StringRequest
@@ -12,7 +13,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.net.URI
 import java.net.URL
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -27,14 +31,27 @@ class ServicesRepository(private val context: Context) {
                 instance ?: ServicesRepository(context).also { instance = it }
             }
 
-//        private val baseURL = URL("http://10.0.2.2:3001")
-        private val baseURL = URL("https://scottishferryapp.com")
-//        private val baseURL = URL("http://192.168.86.31:3001")
+        private const val host = "scottishferryapp.com"
+//        private const val host = "10.0.2.2:3001"
+//        private const val host = "192.168.86.31:3001"
+        private val baseURL = URL("https://$host")
     }
 
-    suspend fun getService(serviceID: Int) = suspendCoroutine<Service> { cont ->
-        val url = URL(baseURL, "/api/services/$serviceID")
-        val request = StringRequest(Request.Method.GET, url.toString(), { response ->
+    suspend fun getService(serviceID: Int, date: Long) = suspendCoroutine<Service> { cont ->
+        val departuresDate = Instant.ofEpochMilli(date)
+            .atZone(Calendar.getInstance().timeZone.toZoneId())
+            .toLocalDate()
+            .format(DateTimeFormatter.ofPattern("uuuu-MM-dd"))
+        val url = Uri.Builder()
+            .scheme("https")
+            .authority(host)
+            .appendPath("api")
+            .appendPath("services")
+            .appendPath(serviceID.toString())
+            .appendQueryParameter("departuresDate", departuresDate)
+            .build()
+            .toString()
+        val request = StringRequest(Request.Method.GET, url, { response ->
             val format = Json { ignoreUnknownKeys = true }
             val service = format.decodeFromString<Service>(response)
             cont.resume(service)
