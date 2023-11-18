@@ -52,15 +52,12 @@ import kotlin.math.min
 import android.text.format.DateFormat
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerColors
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DatePickerFormatter
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapEffect
@@ -123,8 +120,10 @@ class DetailFragment : Fragment() {
                 modifier = Modifier.background(MaterialTheme.colors.background),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                item {
-                    Map(service = service)
+                if (service.locations.isNotEmpty()) {
+                    item {
+                        Map(service = service)
+                    }
                 }
 
                 item {
@@ -382,18 +381,20 @@ class DetailFragment : Fragment() {
                         latLngBuilder.include(LatLng(it.latitude, it.longitude))
                     }
 
-                    try {
-                        val width = resources.displayMetrics.widthPixels
-                        val height = resources.displayMetrics.heightPixels
-                        val padding = min(width, height) * 0.15
-                        map.moveCamera(
-                            CameraUpdateFactory.newLatLngBounds(
-                                latLngBuilder.build(),
-                                padding.toInt()
+                    if (service.locations.isNotEmpty()) {
+                        try {
+                            val width = resources.displayMetrics.widthPixels
+                            val height = resources.displayMetrics.heightPixels
+                            val padding = min(width, height) * 0.15
+                            map.moveCamera(
+                                CameraUpdateFactory.newLatLngBounds(
+                                    latLngBuilder.build(),
+                                    padding.toInt()
+                                )
                             )
-                        )
-                    } catch (exception: Throwable) {
-                        Sentry.captureException(exception)
+                        } catch (exception: Throwable) {
+                            Sentry.captureException(exception)
+                        }
                     }
 
                     when (context.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
