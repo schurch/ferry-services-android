@@ -1,0 +1,115 @@
+package com.stefanchurch.ferryservicesandroid.ui.screens.map
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapType
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun ServiceMapScreen(
+    serviceId: Int,
+    onBack: () -> Unit,
+    viewModel: ServiceMapViewModel = hiltViewModel(),
+) {
+    val service by viewModel.service.collectAsStateWithLifecycle()
+    val fallbackLocation = remember { LatLng(55.640516, -4.823062) }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(fallbackLocation, 8f)
+    }
+    var mapLoaded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(serviceId) {
+        viewModel.load(serviceId)
+    }
+
+    LaunchedEffect(service?.serviceId, mapLoaded) {
+        val currentService = service ?: return@LaunchedEffect
+        if (!mapLoaded) return@LaunchedEffect
+
+        val points = buildList {
+            currentService.locations.forEach { add(LatLng(it.latitude, it.longitude)) }
+            currentService.vessels.forEach { add(LatLng(it.latitude, it.longitude)) }
+        }
+
+        when (points.size) {
+            0 -> cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(fallbackLocation, 8f))
+            1 -> cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(points.first(), 10f))
+            else -> {
+                val bounds = LatLngBounds.builder().apply {
+                    points.forEach(::include)
+                }.build()
+                cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(bounds, 120))
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(service?.route ?: "Map") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        val currentService = service
+        if (currentService == null) {
+            CircularProgressIndicator(modifier = Modifier.padding(innerPadding).padding(24.dp))
+            return@Scaffold
+        }
+
+        GoogleMap(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            cameraPositionState = cameraPositionState,
+            properties = MapProperties(mapType = MapType.NORMAL),
+            onMapLoaded = { mapLoaded = true },
+        ) {
+            currentService.locations.forEach { location ->
+                Marker(
+                    state = MarkerState(LatLng(location.latitude, location.longitude)),
+                    title = location.name,
+                    snippet = location.nextDeparture?.let { "Next departure: ${it.destination.name}" },
+                )
+            }
+            currentService.vessels.forEach { vessel ->
+                Marker(
+                    state = MarkerState(LatLng(vessel.latitude, vessel.longitude)),
+                    title = vessel.name,
+                    snippet = vessel.speed?.let { "$it kn" } ?: "Speed unknown",
+                )
+            }
+        }
+    }
+}
