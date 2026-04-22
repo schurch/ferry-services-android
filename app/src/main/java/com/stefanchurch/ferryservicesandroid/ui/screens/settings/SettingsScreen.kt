@@ -63,7 +63,11 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                Surface(shape = RoundedCornerShape(28.dp), tonalElevation = 2.dp) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    tonalElevation = 2.dp,
+                ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text("Notifications", style = MaterialTheme.typography.titleMedium)
                         if (state.notificationsEnabledBySystem) {
@@ -90,13 +94,23 @@ fun SettingsScreen(
             }
 
             item {
-                Surface(shape = RoundedCornerShape(28.dp), tonalElevation = 2.dp) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    tonalElevation = 2.dp,
+                ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("Contact", style = MaterialTheme.typography.titleMedium)
-                        Button(onClick = { context.startActivity(viewModel.supportEmailIntent()) }) {
+                        Button(
+                            onClick = { context.startActivity(viewModel.supportEmailIntent()) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
                             Text("Email")
                         }
-                        Button(onClick = { context.startActivity(viewModel.playStoreIntent()) }) {
+                        Button(
+                            onClick = { context.startActivity(viewModel.playStoreIntent()) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
                             Text("Rate on Play Store")
                         }
                     }
@@ -104,7 +118,11 @@ fun SettingsScreen(
             }
 
             item {
-                Surface(shape = RoundedCornerShape(28.dp), tonalElevation = 2.dp) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    tonalElevation = 2.dp,
+                ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(state.versionText)
                         Text(

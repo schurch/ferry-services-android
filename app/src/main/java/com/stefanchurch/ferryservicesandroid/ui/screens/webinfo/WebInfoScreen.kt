@@ -3,6 +3,7 @@ package com.stefanchurch.ferryservicesandroid.ui.screens.webinfo
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Icon
@@ -46,7 +47,9 @@ fun WebInfoScreen(
             </html>
         """.trimIndent()
         AndroidView(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
             factory = { context ->
                 WebView(context).apply {
                     webViewClient = WebViewClient()

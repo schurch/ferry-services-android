@@ -1,23 +1,22 @@
 package com.stefanchurch.ferryservicesandroid.ui.screens.services
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +26,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stefanchurch.ferryservicesandroid.ui.components.SectionHeading
 import com.stefanchurch.ferryservicesandroid.ui.components.ServiceRowCard
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.material.ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServicesScreen(
     openSettings: () -> Unit,
@@ -51,10 +52,13 @@ fun ServicesScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var searchVisible by remember { mutableStateOf(false) }
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = state.loading,
-        onRefresh = viewModel::refresh,
-    )
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(searchVisible) {
+        if (searchVisible) {
+            listState.animateScrollToItem(0)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -81,14 +85,16 @@ fun ServicesScreen(
             )
         },
     ) { innerPadding ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = state.loading,
+            onRefresh = viewModel::refresh,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .pullRefresh(pullRefreshState),
+                .padding(innerPadding),
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                state = listState,
                 contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
@@ -107,16 +113,10 @@ fun ServicesScreen(
                 state.sections.forEach { section ->
                     item {
                         Column {
-                            SectionHeading(section.title)
-                            section.imageRes?.let { resId ->
-                                Image(
-                                    painter = painterResource(resId),
-                                    contentDescription = section.title,
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier.height(28.dp),
-                                )
-                                Spacer(Modifier.height(12.dp))
-                            }
+                            OperatorSectionHeading(
+                                title = section.title,
+                                imageRes = section.imageRes,
+                            )
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 section.rows.forEach { row ->
                                     ServiceRowCard(row = row, onClick = { openService(row.service.serviceId) })
@@ -141,12 +141,38 @@ fun ServicesScreen(
                     }
                 }
             }
-
-            PullRefreshIndicator(
-                refreshing = state.loading,
-                state = pullRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter),
-            )
         }
+    }
+}
+
+@Composable
+private fun OperatorSectionHeading(
+    title: String,
+    @DrawableRes imageRes: Int?,
+    modifier: Modifier = Modifier,
+) {
+    if (imageRes == null) {
+        SectionHeading(title = title, modifier = modifier)
+        return
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Image(
+            painter = painterResource(imageRes),
+            contentDescription = title,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(24.dp),
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
     }
 }

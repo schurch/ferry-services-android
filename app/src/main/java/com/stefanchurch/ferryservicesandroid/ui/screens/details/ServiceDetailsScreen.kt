@@ -2,7 +2,8 @@ package com.stefanchurch.ferryservicesandroid.ui.screens.details
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,24 +11,30 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,10 +52,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -66,11 +78,9 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.stefanchurch.ferryservicesandroid.R
 import com.stefanchurch.ferryservicesandroid.data.model.Service
 import com.stefanchurch.ferryservicesandroid.data.model.Service.Location.Weather
-import com.stefanchurch.ferryservicesandroid.ui.components.MetadataLine
 import com.stefanchurch.ferryservicesandroid.ui.components.SectionHeading
 import com.stefanchurch.ferryservicesandroid.ui.components.ServiceStatusIndicator
-import com.stefanchurch.ferryservicesandroid.ui.components.statusColor
-import com.stefanchurch.ferryservicesandroid.ui.theme.FerryTint
+import com.stefanchurch.ferryservicesandroid.ui.model.operatorLogoRes
 import com.stefanchurch.ferryservicesandroid.util.formatTime
 import java.time.Instant
 import java.time.LocalDate
@@ -88,6 +98,7 @@ fun ServiceDetailsScreen(
     val uiState = remember(viewModel, serviceId) { viewModel.uiState(serviceId) }
     val state by uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableLongStateOf(0L) }
+    var selectedDepartureNote by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
 
     androidx.compose.runtime.LaunchedEffect(serviceId) {
@@ -130,6 +141,19 @@ fun ServiceDetailsScreen(
         ) {
             DatePicker(state = datePickerState)
         }
+    }
+
+    selectedDepartureNote?.let { note ->
+        AlertDialog(
+            onDismissRequest = { selectedDepartureNote = null },
+            confirmButton = {
+                TextButton(onClick = { selectedDepartureNote = null }) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Departure note") },
+            text = { Text(note) },
+        )
     }
 
     Scaffold(
@@ -199,26 +223,13 @@ fun ServiceDetailsScreen(
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            ServiceStatusIndicator(service.status)
-                            Text(
-                                text = service.route,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(start = 12.dp),
-                            )
-                        }
                         Text(
-                            text = when (service.status) {
-                                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.NORMAL ->
-                                    "There are currently no disruptions with this service"
-                                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.DISRUPTED ->
-                                    "There are disruptions with this service"
-                                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.CANCELLED ->
-                                    "Sailings have been cancelled for this service"
-                                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.UNKNOWN ->
-                                    "There was a problem fetching the service status"
-                            },
-                            color = statusColor(service.status),
+                            text = service.route,
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        DisruptionStatusRow(
+                            service = service,
+                            onOpenDetails = openWebInfo,
                         )
                     }
                 }
@@ -241,90 +252,106 @@ fun ServiceDetailsScreen(
                 }
 
                 items(service.locations.sortedBy { it.name }) { location ->
-                    DetailSection {
-                        SectionHeading(location.name)
+                    LocationInfoCard {
+                        Text(
+                            text = location.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                         location.nextDeparture?.let { departure ->
-                            MetadataLine(
-                                "Next ferry departure",
-                                "${formatTime(departure.departure)} to ${departure.destination.name}",
+                            LocationInfoItem(
+                                icon = {
+                                    FerryLineIcon()
+                                },
+                                label = "Next ferry departure",
+                                value = "${formatTime(departure.departure)} to ${departure.destination.name}",
                             )
-                            departure.note?.let {
-                                Text(
-                                    it,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        } ?: MetadataLine("Next ferry departure", "Unavailable")
-
+                        } ?: LocationInfoItem(
+                            icon = {
+                                FerryLineIcon()
+                            },
+                            label = "Next ferry departure",
+                            value = "Unavailable",
+                        )
                         location.nextRailDeparture?.let { rail ->
-                            MetadataLine(
-                                "Next rail departure",
-                                "${rail.departure} ${rail.from} to ${rail.to}",
+                            LocationInfoItem(
+                                icon = {
+                                    RailLineIcon()
+                                },
+                                label = "Next rail departure",
+                                value = "${formatTime(rail.departure).ifBlank { rail.departure }} to ${rail.to}",
                             )
-                            MetadataLine("Rail info", rail.departureInfo)
-                            rail.platform?.let { MetadataLine("Platform", it) }
-                        } ?: MetadataLine("Next rail departure", "Unavailable")
-
+                        } ?: LocationInfoItem(
+                            icon = {
+                                RailLineIcon()
+                            },
+                            label = "Next rail departure",
+                            value = "Unavailable",
+                        )
                         location.weather?.let { weather ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                WeatherIcon(weather = weather)
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(
-                                        "${weather.temperatureCelsius}C, ${weather.description}",
-                                        fontWeight = FontWeight.SemiBold,
+                            LocationInfoItem(
+                                icon = {
+                                    WeatherIcon(
+                                        weather = weather,
+                                        modifier = Modifier.size(24.dp),
                                     )
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.wind),
-                                            contentDescription = null,
-                                            tint = FerryTint,
-                                            modifier = Modifier.rotate(weather.windDirection.toFloat() + 180f),
-                                        )
-                                        Text("${weather.windSpeedMph} mph ${weather.windDirectionCardinal}")
-                                    }
-                                }
-                            }
-                        } ?: MetadataLine("Weather", "Unavailable")
+                                },
+                                label = "Weather",
+                                value = "${weather.temperatureCelsius}C, ${weather.description}",
+                            )
+                            LocationInfoItem(
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.wind),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .rotate(weather.windDirection.toFloat() + 180f),
+                                    )
+                                },
+                                label = "Wind",
+                                value = "${weather.windSpeedMph} mph ${weather.windDirectionCardinal}",
+                            )
+                        } ?: LocationInfoItem(
+                            icon = {
+                                WeatherIconFallback(modifier = Modifier.size(24.dp))
+                            },
+                            label = "Weather",
+                            value = "Unavailable",
+                        )
                     }
                 }
 
                 if (state.showSchedule) {
                     item {
                         DetailSection {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
+                            SectionHeading("Scheduled departures")
+                            Button(
+                                onClick = {
+                                    val millis = state.selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                    showDatePicker = millis
+                                },
                             ) {
-                                SectionHeading("Scheduled departures")
-                                OutlinedButton(
-                                    onClick = {
-                                        val millis = state.selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                                        showDatePicker = millis
-                                    },
-                                ) {
-                                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
-                                    Text(
-                                        state.selectedDateLabel,
-                                        modifier = Modifier.padding(start = 8.dp),
-                                    )
-                                }
+                                Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+                                Text(
+                                    state.selectedDateLabel,
+                                    modifier = Modifier.padding(start = 8.dp),
+                                )
                             }
+                            val timetableNoteColor = MaterialTheme.colorScheme.onSurfaceVariant
                             if (state.showScheduleWarning) {
                                 Text(
                                     "Timetable data may not match live operations. Check the operator for the latest update.",
-                                    color = MaterialTheme.colorScheme.tertiary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = timetableNoteColor,
                                 )
                             }
                             state.sharedDepartureNote?.let {
-                                Text(it, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = timetableNoteColor,
+                                )
                             }
                         }
                     }
@@ -333,73 +360,350 @@ fun ServiceDetailsScreen(
                         DetailSection {
                             Text("${section.originName} to ${section.destinationName}", style = MaterialTheme.typography.titleSmall)
                             section.rows.forEach { row ->
+                                val note = row.note?.trim()?.takeIf { it.isNotEmpty() }
+                                val rowColor = if (row.isPastDeparture) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f)
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
                                         row.departureTimeText,
-                                        color = if (row.isPastDeparture) {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface
-                                        },
+                                        color = rowColor,
+                                        modifier = Modifier.weight(1f),
                                     )
                                     Text(
                                         row.arrivalTimeText,
-                                        color = if (row.isPastDeparture) {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface
-                                        },
+                                        color = rowColor,
                                     )
-                                }
-                                row.note?.let {
-                                    Text(it, style = MaterialTheme.typography.bodySmall)
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 12.dp)
+                                            .size(32.dp)
+                                            .then(
+                                                if (note != null) {
+                                                    Modifier.clickable { selectedDepartureNote = note }
+                                                } else {
+                                                    Modifier
+                                                },
+                                            ),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        if (note != null) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Outlined.Notes,
+                                                contentDescription = "Departure note available",
+                                                tint = rowColor,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             section.sharedNote?.let { note ->
-                                Text(note, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    note,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }
 
                     item {
-                        OutlinedButton(
+                        TextButton(
                             onClick = {
                                 context.startActivity(viewModel.supportEmailIntent(serviceId, state))
                             },
+                            modifier = Modifier.wrapContentWidth(Alignment.Start),
+                            contentPadding = PaddingValues(0.dp),
                         ) {
                             Text("Report timetable issue")
                         }
                     }
                 }
 
-                service.additionalInfo?.takeIf { it.isNotBlank() }?.let { html ->
-                    item {
-                        OutlinedButton(onClick = { openWebInfo(html) }) {
-                            Text("Disruption information")
-                            Icon(Icons.AutoMirrored.Outlined.OpenInNew, null, modifier = Modifier.padding(start = 8.dp))
-                        }
-                    }
-                }
-
                 item {
-                    DetailSection {
-                        SectionHeading("Operator")
-                        Text(service.serviceOperator?.name ?: "Unknown operator")
-                        service.serviceOperator?.website?.let { website ->
-                            Text(
-                                website,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.clickable {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(website)))
-                                },
-                            )
-                        }
-                    }
+                    OperatorContactSection(
+                        service = service,
+                        onOpenIntent = { intent -> context.startActivity(intent) },
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun OperatorContactSection(
+    service: Service,
+    onOpenIntent: (Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val operator = service.serviceOperator
+    DetailSection(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            val logoRes = service.operatorLogoRes()
+            if (logoRes != null) {
+                Image(
+                    painter = painterResource(logoRes),
+                    contentDescription = operator?.name,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+            Text(
+                text = operator?.name ?: "Unknown operator",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        val phone = operator?.localNumber ?: operator?.internationalNumber
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OperatorContactButton(
+                label = "Phone",
+                intent = phone?.let { Intent(Intent.ACTION_DIAL, Uri.parse("tel:$it")) },
+                onOpenIntent = onOpenIntent,
+                modifier = Modifier.weight(1f),
+            )
+            OperatorContactButton(
+                label = "Website",
+                intent = operator?.website?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
+                onOpenIntent = onOpenIntent,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OperatorContactButton(
+                label = "Email",
+                intent = operator?.email?.let { Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$it")) },
+                onOpenIntent = onOpenIntent,
+                modifier = Modifier.weight(1f),
+            )
+            OperatorContactButton(
+                label = "X",
+                intent = operator?.x?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
+                onOpenIntent = onOpenIntent,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        OperatorContactButton(
+            label = "Facebook",
+            intent = operator?.facebook?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
+            onOpenIntent = onOpenIntent,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun OperatorContactButton(
+    label: String,
+    intent: Intent?,
+    onOpenIntent: (Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = { intent?.let(onOpenIntent) },
+        enabled = intent != null,
+        modifier = modifier,
+    ) {
+        Text(label)
+    }
+}
+
+@Composable
+private fun LocationInfoItem(
+    icon: @Composable () -> Unit,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier = Modifier.size(24.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            icon()
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FerryLineIcon(modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.onSurface
+    Canvas(modifier = modifier.size(24.dp)) {
+        val stroke = Stroke(
+            width = 1.6.dp.toPx(),
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round,
+        )
+        val hull = Path().apply {
+            moveTo(size.width * 0.18f, size.height * 0.48f)
+            lineTo(size.width * 0.82f, size.height * 0.48f)
+            lineTo(size.width * 0.68f, size.height * 0.68f)
+            lineTo(size.width * 0.30f, size.height * 0.68f)
+            close()
+        }
+        drawPath(hull, color = color, style = stroke)
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.34f, size.height * 0.35f),
+            end = Offset(size.width * 0.70f, size.height * 0.35f),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.42f, size.height * 0.24f),
+            end = Offset(size.width * 0.62f, size.height * 0.24f),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.24f, size.height * 0.78f),
+            end = Offset(size.width * 0.76f, size.height * 0.78f),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+@Composable
+private fun RailLineIcon(modifier: Modifier = Modifier) {
+    val color = MaterialTheme.colorScheme.onSurface
+    Canvas(modifier = modifier.size(24.dp)) {
+        val stroke = Stroke(
+            width = 1.6.dp.toPx(),
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round,
+        )
+        val train = Path().apply {
+            moveTo(size.width * 0.30f, size.height * 0.20f)
+            lineTo(size.width * 0.70f, size.height * 0.20f)
+            lineTo(size.width * 0.76f, size.height * 0.62f)
+            lineTo(size.width * 0.64f, size.height * 0.76f)
+            lineTo(size.width * 0.36f, size.height * 0.76f)
+            lineTo(size.width * 0.24f, size.height * 0.62f)
+            close()
+        }
+        drawPath(train, color = color, style = stroke)
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.34f, size.height * 0.38f),
+            end = Offset(size.width * 0.66f, size.height * 0.38f),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+        drawLine(
+            color = color,
+            start = Offset(size.width * 0.36f, size.height * 0.86f),
+            end = Offset(size.width * 0.64f, size.height * 0.86f),
+            strokeWidth = stroke.width,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+@Composable
+private fun LocationInfoCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun DisruptionStatusRow(
+    service: Service,
+    onOpenDetails: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val detailsHtml = service.additionalInfo?.takeIf { it.isNotBlank() }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .then(
+                if (detailsHtml != null) {
+                    Modifier.clickable { onOpenDetails(detailsHtml) }
+                } else {
+                    Modifier
+                },
+            )
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        ServiceStatusIndicator(service.status)
+        Text(
+            text = when (service.status) {
+                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.NORMAL ->
+                    "There are currently no disruptions with this service"
+                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.DISRUPTED ->
+                    "There are disruptions with this service"
+                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.CANCELLED ->
+                    "Sailings have been cancelled for this service"
+                com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus.UNKNOWN ->
+                    "There was a problem fetching the service status"
+            },
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        if (detailsHtml != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                contentDescription = "Show disruption details",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -496,22 +800,20 @@ private fun WeatherIcon(
         Icon(
             painter = painterResource(id = resourceId),
             contentDescription = weather.description,
-            tint = androidx.compose.ui.graphics.Color.Unspecified,
             modifier = modifier,
         )
     } else {
-        Box(
-            modifier = modifier
-                .background(FerryTint.copy(alpha = 0.12f), CircleShape)
-                .padding(10.dp),
-        ) {
-            Text(
-                text = weather.temperatureCelsius.toString(),
-                color = FerryTint,
-                style = MaterialTheme.typography.labelLarge,
-            )
-        }
+        WeatherIconFallback(modifier = modifier)
     }
+}
+
+@Composable
+private fun WeatherIconFallback(modifier: Modifier = Modifier) {
+    Icon(
+        imageVector = Icons.Outlined.WbSunny,
+        contentDescription = null,
+        modifier = modifier,
+    )
 }
 
 @Composable
