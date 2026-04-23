@@ -1,6 +1,10 @@
 package com.stefanchurch.ferryservicesandroid.ui.screens.map
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -30,6 +34,8 @@ import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.stefanchurch.ferryservicesandroid.ui.components.VesselMapMarker
+import com.stefanchurch.ferryservicesandroid.ui.components.nextDepartureMapSnippet
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -83,6 +89,7 @@ fun ServiceMapScreen(
         },
     ) { innerPadding ->
         val currentService = service
+        val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
         if (currentService == null) {
             CircularProgressIndicator(modifier = Modifier.padding(innerPadding).padding(24.dp))
             return@Scaffold
@@ -91,24 +98,21 @@ fun ServiceMapScreen(
         GoogleMap(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(top = innerPadding.calculateTopPadding()),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(mapType = MapType.NORMAL),
+            contentPadding = PaddingValues(bottom = navigationBarPadding.calculateBottomPadding()),
             onMapLoaded = { mapLoaded = true },
         ) {
             currentService.locations.forEach { location ->
                 Marker(
                     state = MarkerState(LatLng(location.latitude, location.longitude)),
                     title = location.name,
-                    snippet = location.nextDeparture?.let { "Next departure: ${it.destination.name}" },
+                    snippet = location.nextDepartureMapSnippet(),
                 )
             }
             currentService.vessels.forEach { vessel ->
-                Marker(
-                    state = MarkerState(LatLng(vessel.latitude, vessel.longitude)),
-                    title = vessel.name,
-                    snippet = vessel.speed?.let { "$it kn" } ?: "Speed unknown",
-                )
+                VesselMapMarker(vessel, unavailableSpeedLabel = "Speed unknown")
             }
         }
     }

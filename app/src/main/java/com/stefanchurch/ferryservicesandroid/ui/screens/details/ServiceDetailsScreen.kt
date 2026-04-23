@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +42,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,6 +63,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,8 +81,11 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.stefanchurch.ferryservicesandroid.R
 import com.stefanchurch.ferryservicesandroid.data.model.Service
 import com.stefanchurch.ferryservicesandroid.data.model.Service.Location.Weather
+import com.stefanchurch.ferryservicesandroid.ui.model.ScheduledDepartureSectionUiModel
 import com.stefanchurch.ferryservicesandroid.ui.components.SectionHeading
 import com.stefanchurch.ferryservicesandroid.ui.components.ServiceStatusIndicator
+import com.stefanchurch.ferryservicesandroid.ui.components.VesselMapMarker
+import com.stefanchurch.ferryservicesandroid.ui.components.nextDepartureMapSnippet
 import com.stefanchurch.ferryservicesandroid.ui.model.operatorLogoRes
 import com.stefanchurch.ferryservicesandroid.util.formatTime
 import java.time.Instant
@@ -266,13 +272,7 @@ fun ServiceDetailsScreen(
                                 label = "Next ferry departure",
                                 value = "${formatTime(departure.departure)} to ${departure.destination.name}",
                             )
-                        } ?: LocationInfoItem(
-                            icon = {
-                                FerryLineIcon()
-                            },
-                            label = "Next ferry departure",
-                            value = "Unavailable",
-                        )
+                        }
                         location.nextRailDeparture?.let { rail ->
                             LocationInfoItem(
                                 icon = {
@@ -281,13 +281,7 @@ fun ServiceDetailsScreen(
                                 label = "Next rail departure",
                                 value = "${formatTime(rail.departure).ifBlank { rail.departure }} to ${rail.to}",
                             )
-                        } ?: LocationInfoItem(
-                            icon = {
-                                RailLineIcon()
-                            },
-                            label = "Next rail departure",
-                            value = "Unavailable",
-                        )
+                        }
                         location.weather?.let { weather ->
                             LocationInfoItem(
                                 icon = {
@@ -358,60 +352,54 @@ fun ServiceDetailsScreen(
 
                     items(state.scheduleSections) { section ->
                         DetailSection {
-                            Text("${section.originName} to ${section.destinationName}", style = MaterialTheme.typography.titleSmall)
+                            DepartureSectionHeader(section)
                             section.rows.forEach { row ->
                                 val note = row.note?.trim()?.takeIf { it.isNotEmpty() }
                                 val rowColor = if (row.isPastDeparture) {
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        row.departureTimeText,
-                                        color = rowColor,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Text(
-                                        row.arrivalTimeText,
-                                        color = rowColor,
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .padding(start = 12.dp)
-                                            .size(32.dp)
-                                            .then(
-                                                if (note != null) {
-                                                    Modifier.clickable { selectedDepartureNote = note }
-                                                } else {
-                                                    Modifier
-                                                },
-                                            ),
-                                        contentAlignment = Alignment.Center,
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
+                                        Text(
+                                            row.departureTimeText,
+                                            color = rowColor,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        Text(
+                                            row.arrivalTimeText,
+                                            color = rowColor,
+                                        )
                                         if (note != null) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Outlined.Notes,
-                                                contentDescription = "Departure note available",
-                                                tint = rowColor,
-                                                modifier = Modifier.size(18.dp),
-                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .padding(start = 12.dp)
+                                                    .size(32.dp)
+                                                    .clickable { selectedDepartureNote = note },
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.AutoMirrored.Outlined.Notes,
+                                                    contentDescription = "Departure note available",
+                                                    tint = rowColor,
+                                                    modifier = Modifier.size(18.dp),
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            section.sharedNote?.let { note ->
-                                Text(
-                                    note,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                section.sharedNote?.let { note ->
+                                    Text(
+                                        note,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
-                    }
 
                     item {
                         TextButton(
@@ -500,12 +488,57 @@ private fun OperatorContactSection(
                 modifier = Modifier.weight(1f),
             )
         }
-        OperatorContactButton(
-            label = "Facebook",
-            intent = operator?.facebook?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
-            onOpenIntent = onOpenIntent,
+        Row(
             modifier = Modifier.fillMaxWidth(),
-        )
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OperatorContactButton(
+                label = "Facebook",
+                intent = operator?.facebook?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
+                onOpenIntent = onOpenIntent,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun DepartureSectionHeader(
+    section: ScheduledDepartureSectionUiModel,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = section.originName,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = section.destinationName,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -747,9 +780,7 @@ private fun InlineServiceMap(
             .height(220.dp),
     ) {
         GoogleMap(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(onClick = onOpenMap),
+            modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(mapType = MapType.NORMAL),
             uiSettings = MapUiSettings(
@@ -763,22 +794,23 @@ private fun InlineServiceMap(
                 tiltGesturesEnabled = false,
             ),
             onMapLoaded = { mapLoaded = true },
-            onMapClick = { onOpenMap() },
         ) {
             service.locations.forEach { location ->
                 Marker(
                     state = MarkerState(LatLng(location.latitude, location.longitude)),
                     title = location.name,
+                    snippet = location.nextDepartureMapSnippet(),
                 )
             }
             service.vessels.forEach { vessel ->
-                Marker(
-                    state = MarkerState(LatLng(vessel.latitude, vessel.longitude)),
-                    title = vessel.name,
-                    snippet = vessel.speed?.let { "$it kn" } ?: null,
-                )
+                VesselMapMarker(vessel)
             }
         }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onOpenMap),
+        )
     }
 }
 

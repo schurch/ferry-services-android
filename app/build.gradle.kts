@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import java.util.Properties
 
 plugins {
@@ -17,8 +18,21 @@ val localProperties = Properties().apply {
     }
 }
 
+fun googleServicesApiKey(): String {
+    val googleServicesFile = project.file("google-services.json")
+    if (!googleServicesFile.exists()) return ""
+
+    val config = JsonSlurper().parse(googleServicesFile) as? Map<*, *> ?: return ""
+    val clients = config["client"] as? List<*> ?: return ""
+    val firstClient = clients.firstOrNull() as? Map<*, *> ?: return ""
+    val apiKeys = firstClient["api_key"] as? List<*> ?: return ""
+    val firstApiKey = apiKeys.firstOrNull() as? Map<*, *> ?: return ""
+
+    return firstApiKey["current_key"] as? String ?: ""
+}
+
 val mapsApiKey = providers.gradleProperty("MAPS_API_KEY")
-    .orElse(localProperties.getProperty("MAPS_API_KEY") ?: "")
+    .orElse(localProperties.getProperty("MAPS_API_KEY") ?: googleServicesApiKey())
 
 android {
     namespace = "com.stefanchurch.ferryservicesandroid"
