@@ -350,12 +350,22 @@ fun ServiceDetailsScreen(
                         }
                     }
 
-                    items(state.scheduleSections) { section ->
-                        DetailSection {
+                    state.scheduleSections.forEachIndexed { index, section ->
+                        stickyHeader(
+                            key = "departure-header-$index-${section.originName}-${section.destinationName}",
+                            contentType = "departure-header",
+                        ) {
                             DepartureSectionHeader(section)
-                            section.rows.forEach { row ->
-                                val note = row.note?.trim()?.takeIf { it.isNotEmpty() }
-                                val rowColor = if (row.isPastDeparture) {
+                        }
+
+                        item(
+                            key = "departure-rows-$index-${section.originName}-${section.destinationName}",
+                            contentType = "departure-rows",
+                        ) {
+                            DetailSection {
+                                section.rows.forEach { row ->
+                                    val note = row.note?.trim()?.takeIf { it.isNotEmpty() }
+                                    val rowColor = if (row.isPastDeparture) {
                                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f)
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
@@ -400,6 +410,7 @@ fun ServiceDetailsScreen(
                                 }
                             }
                         }
+                    }
 
                     item {
                         TextButton(
