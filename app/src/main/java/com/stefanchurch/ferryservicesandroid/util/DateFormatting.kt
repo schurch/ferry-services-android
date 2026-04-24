@@ -6,7 +6,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private val appZone: ZoneId = ZoneId.systemDefault()
+private val appZone: ZoneId = ZoneId.of("Europe/London")
 private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 private val longDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy")
 
