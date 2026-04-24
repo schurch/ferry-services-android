@@ -30,6 +30,7 @@ object AppModule {
         ignoreUnknownKeys = true
         explicitNulls = false
         isLenient = true
+        encodeDefaults = true
     }
 
     @Provides
@@ -64,7 +65,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAppPreferences(dataStore: DataStore<Preferences>): AppPreferences = AppPreferences(dataStore)
+    fun provideAppPreferences(
+        @ApplicationContext context: Context,
+        dataStore: DataStore<Preferences>,
+    ): AppPreferences = AppPreferences(context, dataStore)
 
     @Provides
     @Singleton

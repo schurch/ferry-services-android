@@ -1,6 +1,7 @@
 package com.stefanchurch.ferryservicesandroid.ui.screens.services
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.RssFeed
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -25,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -43,7 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stefanchurch.ferryservicesandroid.ui.components.SectionHeading
 import com.stefanchurch.ferryservicesandroid.ui.components.ServiceRowCard
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ServicesScreen(
     openSettings: () -> Unit,
@@ -95,8 +99,8 @@ fun ServicesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (searchVisible) {
                     item {
@@ -111,18 +115,21 @@ fun ServicesScreen(
                 }
 
                 state.sections.forEach { section ->
-                    item {
-                        Column {
-                            OperatorSectionHeading(
-                                title = section.title,
-                                imageRes = section.imageRes,
-                            )
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                section.rows.forEach { row ->
-                                    ServiceRowCard(row = row, onClick = { openService(row.service.serviceId) })
-                                }
-                            }
-                        }
+                    stickyHeader(key = "heading-${section.title}-${section.subscribed}") {
+                        OperatorSectionHeading(
+                            title = section.title,
+                            imageRes = section.imageRes,
+                            subscribed = section.subscribed,
+                        )
+                    }
+                    items(
+                        items = section.rows,
+                        key = { row -> "service-${section.title}-${row.service.serviceId}" },
+                    ) { row ->
+                        ServiceRowCard(
+                            row = row,
+                            onClick = { openService(row.service.serviceId) },
+                        )
                     }
                 }
 
@@ -149,30 +156,48 @@ fun ServicesScreen(
 private fun OperatorSectionHeading(
     title: String,
     @DrawableRes imageRes: Int?,
+    subscribed: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    if (imageRes == null) {
-        SectionHeading(title = title, modifier = modifier)
-        return
-    }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Image(
-            painter = painterResource(imageRes),
-            contentDescription = title,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(24.dp),
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        if (imageRes == null && !subscribed) {
+            SectionHeading(title = title, modifier = Modifier.padding(bottom = 2.dp))
+            return@Surface
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            when {
+                subscribed -> {
+                    Icon(
+                        imageVector = Icons.Rounded.RssFeed,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                imageRes != null -> {
+                    Image(
+                        painter = painterResource(imageRes),
+                        contentDescription = title,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
     }
 }

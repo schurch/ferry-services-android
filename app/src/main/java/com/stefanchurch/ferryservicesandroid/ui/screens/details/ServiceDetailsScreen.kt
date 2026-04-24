@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -71,6 +72,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
@@ -91,6 +93,7 @@ import com.stefanchurch.ferryservicesandroid.util.formatTime
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,7 +135,7 @@ fun ServiceDetailsScreen(
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val localDate = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                            val localDate = pickerMillisToLocalDate(millis)
                             viewModel.setSelectedDate(serviceId, localDate)
                         }
                         showDatePicker = 0L
@@ -250,8 +253,15 @@ fun ServiceDetailsScreen(
                             Text("Subscribe to updates", modifier = Modifier.weight(1f))
                             Switch(
                                 checked = state.subscribed,
-                                enabled = !state.loadingSubscribed && state.registeredForNotifications,
+                                enabled = !state.loadingSubscribed && state.notificationsAuthorized,
                                 onCheckedChange = { viewModel.updateSubscribed(serviceId, it) },
+                            )
+                        }
+                        if (!state.notificationsAuthorized) {
+                            Text(
+                                "Enable app notifications in Android settings to manage service updates.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -322,7 +332,7 @@ fun ServiceDetailsScreen(
                             SectionHeading("Scheduled departures")
                             Button(
                                 onClick = {
-                                    val millis = state.selectedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                    val millis = localDateToPickerMillis(state.selectedDate)
                                     showDatePicker = millis
                                 },
                             ) {
@@ -607,10 +617,10 @@ private fun LocationInfoItem(
 
 @Composable
 private fun FerryLineIcon(modifier: Modifier = Modifier) {
-    val color = MaterialTheme.colorScheme.onSurface
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
     Canvas(modifier = modifier.size(24.dp)) {
         val stroke = Stroke(
-            width = 1.6.dp.toPx(),
+            width = 1.2.dp.toPx(),
             cap = StrokeCap.Round,
             join = StrokeJoin.Round,
         )
@@ -648,10 +658,10 @@ private fun FerryLineIcon(modifier: Modifier = Modifier) {
 
 @Composable
 private fun RailLineIcon(modifier: Modifier = Modifier) {
-    val color = MaterialTheme.colorScheme.onSurface
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
     Canvas(modifier = modifier.size(24.dp)) {
         val stroke = Stroke(
-            width = 1.6.dp.toPx(),
+            width = 1.2.dp.toPx(),
             cap = StrokeCap.Round,
             join = StrokeJoin.Round,
         )
@@ -761,8 +771,13 @@ private fun InlineServiceMap(
     val fallbackLocation = remember(service.serviceId) {
         service.locations.firstOrNull()?.let { LatLng(it.latitude, it.longitude) } ?: LatLng(55.640516, -4.823062)
     }
+    val context = LocalContext.current
+    val darkTheme = isSystemInDarkTheme()
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(fallbackLocation, 8f)
+    }
+    val mapStyle = remember(context, darkTheme) {
+        if (darkTheme) MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark) else null
     }
     var mapLoaded by remember(service.serviceId) { mutableStateOf(false) }
 
@@ -793,7 +808,10 @@ private fun InlineServiceMap(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(mapType = MapType.NORMAL),
+            properties = MapProperties(
+                mapType = MapType.NORMAL,
+                mapStyleOptions = mapStyle,
+            ),
             uiSettings = MapUiSettings(
                 compassEnabled = false,
                 mapToolbarEnabled = false,
@@ -870,3 +888,9 @@ private fun DetailSection(
         content = content,
     )
 }
+
+private fun localDateToPickerMillis(date: LocalDate): Long =
+    date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+private fun pickerMillisToLocalDate(millis: Long): LocalDate =
+    Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()

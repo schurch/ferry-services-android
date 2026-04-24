@@ -28,7 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.stefanchurch.ferryservicesandroid.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +78,7 @@ fun SettingsScreen(
                                 Switch(
                                     checked = state.serverPushEnabled ?: false,
                                     onCheckedChange = viewModel::setPushEnabled,
-                                    enabled = state.serverPushEnabled != null,
+                                    enabled = state.notificationsEnabledBySystem,
                                 )
                             }
                         } else {
@@ -128,11 +127,6 @@ fun SettingsScreen(
                         Text(
                             "Hi, I'm Stefan. Thanks for using the Scottish Ferries App. If you have any questions or issues please feel free to email me, or if you find the app useful you can also leave a review on the store.",
                             style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Text(
-                            "Android package: ${BuildConfig.APPLICATION_ID}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

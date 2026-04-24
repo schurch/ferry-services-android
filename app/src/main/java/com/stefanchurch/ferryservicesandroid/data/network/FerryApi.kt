@@ -9,6 +9,7 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 import java.util.UUID
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 interface FerryApi {
@@ -54,11 +55,11 @@ interface FerryApi {
 
 @Serializable
 data class CreateInstallationBody(
-    val deviceToken: String,
-    val deviceType: String = "ANDROID",
+    @SerialName("device_token") val deviceToken: String,
+    @SerialName("device_type") val deviceType: String = "Android",
 )
 
 @Serializable
 data class CreateInstallationServiceBody(
-    val serviceID: Int,
+    @SerialName("service_id") val serviceID: Int,
 )

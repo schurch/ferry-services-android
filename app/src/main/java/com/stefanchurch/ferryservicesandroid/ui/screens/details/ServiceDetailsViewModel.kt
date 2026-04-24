@@ -10,6 +10,7 @@ import com.stefanchurch.ferryservicesandroid.BuildConfig
 import com.stefanchurch.ferryservicesandroid.data.model.Service
 import com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus
 import com.stefanchurch.ferryservicesandroid.data.repository.ServicesRepository
+import com.stefanchurch.ferryservicesandroid.notifications.fetchFcmToken
 import com.stefanchurch.ferryservicesandroid.ui.model.ScheduledDepartureSectionUiModel
 import com.stefanchurch.ferryservicesandroid.ui.model.globallySharedDepartureNote
 import com.stefanchurch.ferryservicesandroid.ui.model.groupedDepartureSections
@@ -166,7 +167,12 @@ class ServiceDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             loadingSubscribed.value = true
             errorMessage.value = null
-            runCatching { repository.toggleSubscription(serviceId, subscribed) }
+            runCatching {
+                if (subscribed && !repository.isRegisteredForNotifications.first()) {
+                    repository.registerInstallation(fetchFcmToken())
+                }
+                repository.toggleSubscription(serviceId, subscribed)
+            }
                 .onFailure { errorMessage.value = "A problem occurred. Please try again later." }
             loadingSubscribed.value = false
         }
@@ -190,10 +196,13 @@ class ServiceDetailsViewModel @Inject constructor(
             appendLine("- Device OS: Android ${android.os.Build.VERSION.RELEASE}")
             appendLine("---")
         }
+        val uri = Uri.parse(
+            "mailto:${BuildConfig.SUPPORT_EMAIL}" +
+                "?subject=${Uri.encode("Timetable issue - Service $serviceId")}" +
+                "&body=${Uri.encode(body)}",
+        )
         return Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.parse("mailto:${BuildConfig.SUPPORT_EMAIL}")
-            putExtra(Intent.EXTRA_SUBJECT, "Timetable issue - Service $serviceId")
-            putExtra(Intent.EXTRA_TEXT, body)
+            data = uri
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,12 +30,14 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.stefanchurch.ferryservicesandroid.R
 import com.stefanchurch.ferryservicesandroid.ui.components.VesselMapMarker
 import com.stefanchurch.ferryservicesandroid.ui.components.nextDepartureMapSnippet
 
@@ -46,8 +50,13 @@ fun ServiceMapScreen(
 ) {
     val service by viewModel.service.collectAsStateWithLifecycle()
     val fallbackLocation = remember { LatLng(55.640516, -4.823062) }
+    val context = LocalContext.current
+    val darkTheme = isSystemInDarkTheme()
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(fallbackLocation, 8f)
+    }
+    val mapStyle = remember(context, darkTheme) {
+        if (darkTheme) MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark) else null
     }
     var mapLoaded by remember { mutableStateOf(false) }
 
@@ -100,7 +109,10 @@ fun ServiceMapScreen(
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding()),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(mapType = MapType.NORMAL),
+            properties = MapProperties(
+                mapType = MapType.NORMAL,
+                mapStyleOptions = mapStyle,
+            ),
             contentPadding = PaddingValues(bottom = navigationBarPadding.calculateBottomPadding()),
             onMapLoaded = { mapLoaded = true },
         ) {

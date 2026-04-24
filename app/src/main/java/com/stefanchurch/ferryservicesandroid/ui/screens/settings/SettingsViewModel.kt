@@ -9,10 +9,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.stefanchurch.ferryservicesandroid.BuildConfig
 import com.stefanchurch.ferryservicesandroid.data.repository.ServicesRepository
+import com.stefanchurch.ferryservicesandroid.notifications.fetchFcmToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -36,6 +38,13 @@ class SettingsViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             val systemEnabled = NotificationManagerCompat.from(getApplication()).areNotificationsEnabled()
+            if (systemEnabled) {
+                runCatching {
+                    if (!repository.isRegisteredForNotifications.first()) {
+                        repository.registerInstallation(fetchFcmToken())
+                    }
+                }
+            }
             val serverEnabled = runCatching { repository.getPushStatus() }.getOrNull()
             _uiState.value = _uiState.value.copy(
                 notificationsEnabledBySystem = systemEnabled,
@@ -46,7 +55,12 @@ class SettingsViewModel @Inject constructor(
 
     fun setPushEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            runCatching { repository.updatePushStatus(enabled) }
+            runCatching {
+                if (!repository.isRegisteredForNotifications.first()) {
+                    repository.registerInstallation(fetchFcmToken())
+                }
+                repository.updatePushStatus(enabled)
+            }
             refresh()
         }
     }
