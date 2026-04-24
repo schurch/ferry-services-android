@@ -47,6 +47,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -211,235 +212,247 @@ fun ServiceDetailsScreen(
         }
 
         if (service != null) {
-            LazyColumn(
+            PullToRefreshBox(
+                isRefreshing = state.loading,
+                onRefresh = { viewModel.refresh(serviceId) },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                item {
-                    InlineServiceMap(
-                        service = service,
-                        onOpenMap = { openMap(serviceId) },
-                    )
-                }
-
-                item {
-                    DetailSection {
-                        Text(
-                            text = service.area,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = service.route,
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        DisruptionStatusRow(
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    item {
+                        InlineServiceMap(
                             service = service,
-                            onOpenDetails = openWebInfo,
+                            onOpenMap = { openMap(serviceId) },
                         )
                     }
-                }
 
-                item {
-                    DetailSection {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("Subscribe to updates", modifier = Modifier.weight(1f))
-                            Switch(
-                                checked = state.subscribed,
-                                enabled = !state.loadingSubscribed && state.notificationsAuthorized,
-                                onCheckedChange = { viewModel.updateSubscribed(serviceId, it) },
-                            )
-                        }
-                        if (!state.notificationsAuthorized) {
+                    item {
+                        DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
                             Text(
-                                "Enable app notifications in Android settings to manage service updates.",
-                                style = MaterialTheme.typography.bodySmall,
+                                text = service.area,
+                                style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                            Text(
+                                text = service.route,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            DisruptionStatusRow(
+                                service = service,
+                                onOpenDetails = openWebInfo,
+                            )
                         }
                     }
-                }
 
-                items(service.locations.sortedBy { it.name }) { location ->
-                    LocationInfoCard {
-                        Text(
-                            text = location.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        location.nextDeparture?.let { departure ->
-                            LocationInfoItem(
-                                icon = {
-                                    FerryLineIcon()
-                                },
-                                label = "Next ferry departure",
-                                value = "${formatTime(departure.departure)} to ${departure.destination.name}",
-                            )
+                    item {
+                        DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("Subscribe to updates", modifier = Modifier.weight(1f))
+                                Switch(
+                                    checked = state.subscribed,
+                                    enabled = !state.loadingSubscribed && state.notificationsAuthorized,
+                                    onCheckedChange = { viewModel.updateSubscribed(serviceId, it) },
+                                )
+                            }
+                            if (!state.notificationsAuthorized) {
+                                Text(
+                                    "Enable app notifications in Android settings to manage service updates.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
-                        location.nextRailDeparture?.let { rail ->
-                            LocationInfoItem(
-                                icon = {
-                                    RailLineIcon()
-                                },
-                                label = "Next rail departure",
-                                value = "${formatTime(rail.departure).ifBlank { rail.departure }} to ${rail.to}",
+                    }
+
+                    items(service.locations.sortedBy { it.name }) { location ->
+                        LocationInfoCard(modifier = Modifier.padding(horizontal = 20.dp)) {
+                            Text(
+                                text = location.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
-                        }
-                        location.weather?.let { weather ->
-                            LocationInfoItem(
+                            location.nextDeparture?.let { departure ->
+                                LocationInfoItem(
+                                    icon = {
+                                        FerryLineIcon()
+                                    },
+                                    label = "Next ferry departure",
+                                    value = "${formatTime(departure.departure)} to ${departure.destination.name}",
+                                )
+                            }
+                            location.nextRailDeparture?.let { rail ->
+                                LocationInfoItem(
+                                    icon = {
+                                        RailLineIcon()
+                                    },
+                                    label = "Next rail departure",
+                                    value = "${formatTime(rail.departure).ifBlank { rail.departure }} to ${rail.to}",
+                                )
+                            }
+                            location.weather?.let { weather ->
+                                LocationInfoItem(
+                                    icon = {
+                                        WeatherIcon(
+                                            weather = weather,
+                                            modifier = Modifier.size(24.dp),
+                                        )
+                                    },
+                                    label = "Weather",
+                                    value = "${weather.temperatureCelsius}C, ${weather.description}",
+                                )
+                                LocationInfoItem(
+                                    icon = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.wind),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .rotate(weather.windDirection.toFloat() + 180f),
+                                        )
+                                    },
+                                    label = "Wind",
+                                    value = "${weather.windSpeedMph} mph ${weather.windDirectionCardinal}",
+                                )
+                            } ?: LocationInfoItem(
                                 icon = {
-                                    WeatherIcon(
-                                        weather = weather,
-                                        modifier = Modifier.size(24.dp),
-                                    )
+                                    WeatherIconFallback(modifier = Modifier.size(24.dp))
                                 },
                                 label = "Weather",
-                                value = "${weather.temperatureCelsius}C, ${weather.description}",
+                                value = "Unavailable",
                             )
-                            LocationInfoItem(
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.wind),
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .rotate(weather.windDirection.toFloat() + 180f),
+                        }
+                    }
+
+                    if (state.showSchedule) {
+                        item {
+                            DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
+                                SectionHeading("Scheduled departures")
+                                Button(
+                                    onClick = {
+                                        val millis = localDateToPickerMillis(state.selectedDate)
+                                        showDatePicker = millis
+                                    },
+                                ) {
+                                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
+                                    Text(
+                                        state.selectedDateLabel,
+                                        modifier = Modifier.padding(start = 8.dp),
                                     )
-                                },
-                                label = "Wind",
-                                value = "${weather.windSpeedMph} mph ${weather.windDirectionCardinal}",
-                            )
-                        } ?: LocationInfoItem(
-                            icon = {
-                                WeatherIconFallback(modifier = Modifier.size(24.dp))
-                            },
-                            label = "Weather",
-                            value = "Unavailable",
-                        )
-                    }
-                }
+                                }
+                                val timetableNoteColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                if (state.showScheduleWarning) {
+                                    Text(
+                                        "Timetable data may not match live operations. Check the operator for the latest update.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = timetableNoteColor,
+                                    )
+                                }
+                                state.sharedDepartureNote?.let {
+                                    Text(
+                                        it,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = timetableNoteColor,
+                                    )
+                                }
+                            }
+                        }
 
-                if (state.showSchedule) {
-                    item {
-                        DetailSection {
-                            SectionHeading("Scheduled departures")
-                            Button(
-                                onClick = {
-                                    val millis = localDateToPickerMillis(state.selectedDate)
-                                    showDatePicker = millis
-                                },
+                        state.scheduleSections.forEachIndexed { index, section ->
+                            stickyHeader(
+                                key = "departure-header-$index-${section.originName}-${section.destinationName}",
+                                contentType = "departure-header",
                             ) {
-                                Icon(Icons.Outlined.CalendarMonth, contentDescription = null)
-                                Text(
-                                    state.selectedDateLabel,
-                                    modifier = Modifier.padding(start = 8.dp),
+                                DepartureSectionHeader(
+                                    section = section,
+                                    modifier = Modifier.padding(horizontal = 20.dp),
                                 )
                             }
-                            val timetableNoteColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            if (state.showScheduleWarning) {
-                                Text(
-                                    "Timetable data may not match live operations. Check the operator for the latest update.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = timetableNoteColor,
-                                )
-                            }
-                            state.sharedDepartureNote?.let {
-                                Text(
-                                    it,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = timetableNoteColor,
-                                )
-                            }
-                        }
-                    }
 
-                    state.scheduleSections.forEachIndexed { index, section ->
-                        stickyHeader(
-                            key = "departure-header-$index-${section.originName}-${section.destinationName}",
-                            contentType = "departure-header",
-                        ) {
-                            DepartureSectionHeader(section)
-                        }
-
-                        item(
-                            key = "departure-rows-$index-${section.originName}-${section.destinationName}",
-                            contentType = "departure-rows",
-                        ) {
-                            DetailSection {
-                                section.rows.forEach { row ->
-                                    val note = row.note?.trim()?.takeIf { it.isNotEmpty() }
-                                    val rowColor = if (row.isPastDeparture) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f)
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    }
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text(
-                                            row.departureTimeText,
-                                            color = rowColor,
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                        Text(
-                                            row.arrivalTimeText,
-                                            color = rowColor,
-                                        )
-                                        if (note != null) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .padding(start = 12.dp)
-                                                    .size(32.dp)
-                                                    .clickable { selectedDepartureNote = note },
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.AutoMirrored.Outlined.Notes,
-                                                    contentDescription = "Departure note available",
-                                                    tint = rowColor,
-                                                    modifier = Modifier.size(18.dp),
-                                                )
+                            item(
+                                key = "departure-rows-$index-${section.originName}-${section.destinationName}",
+                                contentType = "departure-rows",
+                            ) {
+                                DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
+                                    section.rows.forEach { row ->
+                                        val note = row.note?.trim()?.takeIf { it.isNotEmpty() }
+                                        val rowColor = if (row.isPastDeparture) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f)
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Text(
+                                                row.departureTimeText,
+                                                color = rowColor,
+                                                modifier = Modifier.weight(1f),
+                                            )
+                                            Text(
+                                                row.arrivalTimeText,
+                                                color = rowColor,
+                                            )
+                                            if (note != null) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .padding(start = 12.dp)
+                                                        .size(32.dp)
+                                                        .clickable { selectedDepartureNote = note },
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.AutoMirrored.Outlined.Notes,
+                                                        contentDescription = "Departure note available",
+                                                        tint = rowColor,
+                                                        modifier = Modifier.size(18.dp),
+                                                    )
+                                                }
                                             }
                                         }
                                     }
+                                    section.sharedNote?.let { note ->
+                                        Text(
+                                            note,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                 }
-                                section.sharedNote?.let { note ->
-                                    Text(
-                                        note,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
+                            }
+                        }
+
+                        item {
+                            TextButton(
+                                onClick = {
+                                    context.startActivity(viewModel.supportEmailIntent(serviceId, state))
+                                },
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .wrapContentWidth(Alignment.Start),
+                                contentPadding = PaddingValues(0.dp),
+                            ) {
+                                Text("Report timetable issue")
                             }
                         }
                     }
 
                     item {
-                        TextButton(
-                            onClick = {
-                                context.startActivity(viewModel.supportEmailIntent(serviceId, state))
-                            },
-                            modifier = Modifier.wrapContentWidth(Alignment.Start),
-                            contentPadding = PaddingValues(0.dp),
-                        ) {
-                            Text("Report timetable issue")
-                        }
+                        OperatorContactSection(
+                            service = service,
+                            onOpenIntent = { intent -> context.startActivity(intent) },
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                        )
                     }
-                }
-
-                item {
-                    OperatorContactSection(
-                        service = service,
-                        onOpenIntent = { intent -> context.startActivity(intent) },
-                    )
                 }
             }
         }
@@ -475,51 +488,53 @@ private fun OperatorContactSection(
         }
 
         val phone = operator?.localNumber ?: operator?.internationalNumber
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OperatorContactButton(
-                label = "Phone",
-                intent = phone?.let { Intent(Intent.ACTION_DIAL, Uri.parse("tel:$it")) },
-                onOpenIntent = onOpenIntent,
-                modifier = Modifier.weight(1f),
-            )
-            OperatorContactButton(
-                label = "Website",
-                intent = operator?.website?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
-                onOpenIntent = onOpenIntent,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OperatorContactButton(
-                label = "Email",
-                intent = operator?.email?.let { Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$it")) },
-                onOpenIntent = onOpenIntent,
-                modifier = Modifier.weight(1f),
-            )
-            OperatorContactButton(
-                label = "X",
-                intent = operator?.x?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
-                onOpenIntent = onOpenIntent,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            OperatorContactButton(
-                label = "Facebook",
-                intent = operator?.facebook?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
-                onOpenIntent = onOpenIntent,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(modifier = Modifier.weight(1f))
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OperatorContactButton(
+                    label = "Phone",
+                    intent = phone?.let { Intent(Intent.ACTION_DIAL, Uri.parse("tel:$it")) },
+                    onOpenIntent = onOpenIntent,
+                    modifier = Modifier.weight(1f),
+                )
+                OperatorContactButton(
+                    label = "Website",
+                    intent = operator?.website?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
+                    onOpenIntent = onOpenIntent,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OperatorContactButton(
+                    label = "Email",
+                    intent = operator?.email?.let { Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$it")) },
+                    onOpenIntent = onOpenIntent,
+                    modifier = Modifier.weight(1f),
+                )
+                OperatorContactButton(
+                    label = "X",
+                    intent = operator?.x?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
+                    onOpenIntent = onOpenIntent,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OperatorContactButton(
+                    label = "Facebook",
+                    intent = operator?.facebook?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)) },
+                    onOpenIntent = onOpenIntent,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.weight(1f))
+            }
         }
     }
 }

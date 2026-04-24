@@ -26,17 +26,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -55,11 +56,12 @@ fun ServicesScreen(
     viewModel: ServicesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var searchVisible by remember { mutableStateOf(false) }
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val showSearch = searchVisible || state.searchText.isNotBlank()
 
-    LaunchedEffect(searchVisible) {
-        if (searchVisible) {
+    LaunchedEffect(showSearch) {
+        if (showSearch) {
             listState.animateScrollToItem(0)
         }
     }
@@ -71,15 +73,19 @@ fun ServicesScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            searchVisible = !searchVisible
-                            if (!searchVisible && state.searchText.isNotEmpty()) {
+                            if (showSearch) {
+                                searchVisible = false
+                            } else {
+                                searchVisible = true
+                            }
+                            if (showSearch && state.searchText.isNotEmpty()) {
                                 viewModel.updateSearchText("")
                             }
                         },
                     ) {
                         Icon(
-                            if (searchVisible) Icons.Rounded.Close else Icons.Rounded.Search,
-                            contentDescription = if (searchVisible) "Close search" else "Search",
+                            if (showSearch) Icons.Rounded.Close else Icons.Rounded.Search,
+                            contentDescription = if (showSearch) "Close search" else "Search",
                         )
                     }
                     IconButton(onClick = openSettings) {
@@ -99,17 +105,38 @@ fun ServicesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                if (searchVisible) {
+                if (showSearch) {
                     item {
-                        OutlinedTextField(
+                        TextField(
                             value = state.searchText,
                             onValueChange = viewModel::updateSearchText,
-                            label = { Text("Search routes or areas") },
-                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Search routes or areas") },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.Search, contentDescription = null)
+                            },
+                            trailingIcon = if (state.searchText.isNotEmpty()) {
+                                {
+                                    IconButton(onClick = { viewModel.updateSearchText("") }) {
+                                        Icon(Icons.Rounded.Close, contentDescription = "Clear search")
+                                    }
+                                }
+                            } else {
+                                null
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
                             singleLine = true,
+                            shape = MaterialTheme.shapes.extraLarge,
+                            colors = TextFieldDefaults.colors(
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                            ),
                         )
                     }
                 }

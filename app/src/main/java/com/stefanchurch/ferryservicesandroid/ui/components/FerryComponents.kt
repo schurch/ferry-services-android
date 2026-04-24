@@ -70,14 +70,14 @@ fun ServiceRowCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(20.dp),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
+                .padding(horizontal = 14.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             ServiceStatusIndicator(row.status)
             Column(modifier = Modifier.weight(1f)) {
@@ -91,7 +91,7 @@ fun ServiceRowCard(
                     row.disruptionText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = statusColor(row.status),
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
             Icon(
@@ -110,7 +110,7 @@ fun SectionHeading(title: String, modifier: Modifier = Modifier) {
         text = title,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onBackground,
-        modifier = modifier.padding(bottom = 8.dp),
+        modifier = modifier.padding(bottom = 4.dp),
     )
 }
 
