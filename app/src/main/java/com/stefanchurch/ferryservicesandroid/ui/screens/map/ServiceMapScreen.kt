@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -49,7 +50,9 @@ fun ServiceMapScreen(
     viewModel: ServiceMapViewModel = hiltViewModel(),
 ) {
     val service by viewModel.service.collectAsStateWithLifecycle()
-    val fallbackLocation = remember { LatLng(55.640516, -4.823062) }
+    val fallbackLocation = remember(service?.serviceId) {
+        service?.locations?.firstOrNull()?.let { LatLng(it.latitude, it.longitude) } ?: LatLng(55.640516, -4.823062)
+    }
     val context = LocalContext.current
     val darkTheme = isSystemInDarkTheme()
     val cameraPositionState = rememberCameraPositionState {
@@ -59,14 +62,16 @@ fun ServiceMapScreen(
         if (darkTheme) MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark) else null
     }
     var mapLoaded by remember { mutableStateOf(false) }
+    var mapWidthPx by remember { mutableStateOf(0) }
+    var mapHeightPx by remember { mutableStateOf(0) }
 
     LaunchedEffect(serviceId) {
         viewModel.load(serviceId)
     }
 
-    LaunchedEffect(service?.serviceId, mapLoaded) {
+    LaunchedEffect(service?.serviceId, mapLoaded, mapWidthPx, mapHeightPx) {
         val currentService = service ?: return@LaunchedEffect
-        if (!mapLoaded) return@LaunchedEffect
+        if (!mapLoaded || mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
 
         val locationPoints = currentService.locations.map { LatLng(it.latitude, it.longitude) }
         val points = locationPoints.ifEmpty {
@@ -80,7 +85,9 @@ fun ServiceMapScreen(
                 val bounds = LatLngBounds.builder().apply {
                     points.forEach(::include)
                 }.build()
-                cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(bounds, 120))
+                cameraPositionState.move(
+                    CameraUpdateFactory.newLatLngBounds(bounds, mapWidthPx, mapHeightPx, 120),
+                )
             }
         }
     }
@@ -107,7 +114,11 @@ fun ServiceMapScreen(
         GoogleMap(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding()),
+                .padding(top = innerPadding.calculateTopPadding())
+                .onSizeChanged {
+                    mapWidthPx = it.width
+                    mapHeightPx = it.height
+                },
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
                 mapType = MapType.NORMAL,

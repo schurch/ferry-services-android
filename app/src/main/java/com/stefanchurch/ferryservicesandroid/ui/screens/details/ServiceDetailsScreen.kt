@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -795,12 +796,14 @@ private fun InlineServiceMap(
         if (darkTheme) MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark) else null
     }
     var mapLoaded by remember(service.serviceId) { mutableStateOf(false) }
+    var mapWidthPx by remember(service.serviceId) { mutableStateOf(0) }
+    var mapHeightPx by remember(service.serviceId) { mutableStateOf(0) }
 
-    androidx.compose.runtime.LaunchedEffect(service.serviceId, mapLoaded) {
-        if (!mapLoaded) return@LaunchedEffect
-        val points = buildList {
-            service.locations.forEach { add(LatLng(it.latitude, it.longitude)) }
-            service.vessels.forEach { add(LatLng(it.latitude, it.longitude)) }
+    androidx.compose.runtime.LaunchedEffect(service.serviceId, mapLoaded, mapWidthPx, mapHeightPx) {
+        if (!mapLoaded || mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
+        val locationPoints = service.locations.map { LatLng(it.latitude, it.longitude) }
+        val points = locationPoints.ifEmpty {
+            service.vessels.map { LatLng(it.latitude, it.longitude) }
         }
 
         when (points.size) {
@@ -810,7 +813,9 @@ private fun InlineServiceMap(
                 val bounds = LatLngBounds.builder().apply {
                     points.forEach(::include)
                 }.build()
-                cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(bounds, 120))
+                cameraPositionState.move(
+                    CameraUpdateFactory.newLatLngBounds(bounds, mapWidthPx, mapHeightPx, 120),
+                )
             }
         }
     }
@@ -821,7 +826,12 @@ private fun InlineServiceMap(
             .height(220.dp),
     ) {
         GoogleMap(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged {
+                    mapWidthPx = it.width
+                    mapHeightPx = it.height
+                },
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
                 mapType = MapType.NORMAL,

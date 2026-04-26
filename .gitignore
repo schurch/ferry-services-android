@@ -4,6 +4,9 @@
 .kotlin/
 build/
 app/build/
+.android-cli/
+.android-home/
+.android-sdk/
 
 # Local machine configuration and secrets
 local.properties
