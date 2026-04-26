@@ -47,16 +47,20 @@ class FerryFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val body = when (payload) {
-            is NotificationPayloadParser.Payload.Alert -> payload.message
-            is NotificationPayloadParser.Payload.Service -> "Open service details"
-        }
+        val content = NotificationContentResolver.resolve(
+            payload = payload,
+            appName = getString(R.string.app_name),
+            notificationTitle = message.notification?.title,
+            notificationBody = message.notification?.body,
+            dataTitle = message.data["title"],
+            dataBody = message.data["body"],
+        )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_ferry)
-            .setContentTitle(getString(R.string.app_name))
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentTitle(content.title)
+            .setContentText(content.body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(content.body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
