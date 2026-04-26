@@ -34,6 +34,26 @@ fun googleServicesApiKey(): String {
 val mapsApiKey = providers.gradleProperty("MAPS_API_KEY")
     .orElse(localProperties.getProperty("MAPS_API_KEY") ?: googleServicesApiKey())
 
+fun stringProperty(name: String): String? =
+    providers.gradleProperty(name).orNull
+        ?: System.getenv(name)
+        ?: localProperties.getProperty(name)
+
+fun intProperty(name: String): Int? = stringProperty(name)?.toIntOrNull()
+
+val ciVersionCode = intProperty("CI_VERSION_CODE")
+val ciVersionCodeBase = intProperty("CI_VERSION_CODE_BASE") ?: 10_000
+val releaseStoreFilePath = stringProperty("ANDROID_RELEASE_STORE_FILE")
+val releaseStorePassword = stringProperty("ANDROID_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = stringProperty("ANDROID_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = stringProperty("ANDROID_RELEASE_KEY_PASSWORD")
+val hasReleaseSigningConfig = listOf(
+    releaseStoreFilePath,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.stefanchurch.ferryservicesandroid"
     compileSdk = 35
@@ -42,7 +62,7 @@ android {
         applicationId = "com.stefanchurch.ferryservices"
         minSdk = 28
         targetSdk = 35
-        versionCode = 41
+        versionCode = ciVersionCode?.let { ciVersionCodeBase + it } ?: 41
         versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -54,6 +74,17 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey.get()
     }
 
+    signingConfigs {
+        if (hasReleaseSigningConfig) {
+            create("release") {
+                storeFile = file(requireNotNull(releaseStoreFilePath))
+                storePassword = requireNotNull(releaseStorePassword)
+                keyAlias = requireNotNull(releaseKeyAlias)
+                keyPassword = requireNotNull(releaseKeyPassword)
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -61,6 +92,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            if (hasReleaseSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
