@@ -57,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onSizeChanged
@@ -796,10 +797,11 @@ private fun InlineServiceMap(
         if (darkTheme) MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark) else null
     }
     var mapLoaded by remember(service.serviceId) { mutableStateOf(false) }
+    var cameraReady by remember(service.serviceId) { mutableStateOf(false) }
     var mapWidthPx by remember(service.serviceId) { mutableStateOf(0) }
     var mapHeightPx by remember(service.serviceId) { mutableStateOf(0) }
 
-    androidx.compose.runtime.LaunchedEffect(service.serviceId, mapLoaded, mapWidthPx, mapHeightPx) {
+    androidx.compose.runtime.LaunchedEffect(service, mapLoaded, mapWidthPx, mapHeightPx) {
         if (!mapLoaded || mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
         val locationPoints = service.locations.map { LatLng(it.latitude, it.longitude) }
         val points = locationPoints.ifEmpty {
@@ -818,6 +820,7 @@ private fun InlineServiceMap(
                 )
             }
         }
+        cameraReady = true
     }
 
     Box(
@@ -828,6 +831,7 @@ private fun InlineServiceMap(
         GoogleMap(
             modifier = Modifier
                 .fillMaxSize()
+                .alpha(if (cameraReady) 1f else 0f)
                 .onSizeChanged {
                     mapWidthPx = it.width
                     mapHeightPx = it.height

@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
@@ -62,6 +63,7 @@ fun ServiceMapScreen(
         if (darkTheme) MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark) else null
     }
     var mapLoaded by remember { mutableStateOf(false) }
+    var cameraReady by remember(service?.serviceId) { mutableStateOf(false) }
     var mapWidthPx by remember { mutableStateOf(0) }
     var mapHeightPx by remember { mutableStateOf(0) }
 
@@ -69,7 +71,7 @@ fun ServiceMapScreen(
         viewModel.load(serviceId)
     }
 
-    LaunchedEffect(service?.serviceId, mapLoaded, mapWidthPx, mapHeightPx) {
+    LaunchedEffect(service, mapLoaded, mapWidthPx, mapHeightPx) {
         val currentService = service ?: return@LaunchedEffect
         if (!mapLoaded || mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
 
@@ -90,6 +92,7 @@ fun ServiceMapScreen(
                 )
             }
         }
+        cameraReady = true
     }
 
     Scaffold(
@@ -115,6 +118,7 @@ fun ServiceMapScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
+                .alpha(if (cameraReady) 1f else 0f)
                 .onSizeChanged {
                     mapWidthPx = it.width
                     mapHeightPx = it.height
