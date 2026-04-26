@@ -20,10 +20,6 @@
             android:value="${MAPS_API_KEY}" />
 
         <meta-data
-            android:name="io.sentry.dsn"
-            android:value="https://41e769d708254514b49ac860e734d270@o434952.ingest.sentry.io/5418398" />
-
-        <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_stat_ferry" />
 
