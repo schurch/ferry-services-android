@@ -68,9 +68,9 @@ fun ServiceMapScreen(
         val currentService = service ?: return@LaunchedEffect
         if (!mapLoaded) return@LaunchedEffect
 
-        val points = buildList {
-            currentService.locations.forEach { add(LatLng(it.latitude, it.longitude)) }
-            currentService.vessels.forEach { add(LatLng(it.latitude, it.longitude)) }
+        val locationPoints = currentService.locations.map { LatLng(it.latitude, it.longitude) }
+        val points = locationPoints.ifEmpty {
+            currentService.vessels.map { LatLng(it.latitude, it.longitude) }
         }
 
         when (points.size) {
