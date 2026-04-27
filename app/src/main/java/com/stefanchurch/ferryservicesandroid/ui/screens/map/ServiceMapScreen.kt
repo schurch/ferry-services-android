@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
@@ -62,8 +61,6 @@ fun ServiceMapScreen(
     val mapStyle = remember(context, darkTheme) {
         if (darkTheme) MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark) else null
     }
-    var mapLoaded by remember { mutableStateOf(false) }
-    var cameraReady by remember(service?.serviceId) { mutableStateOf(false) }
     var mapWidthPx by remember { mutableStateOf(0) }
     var mapHeightPx by remember { mutableStateOf(0) }
 
@@ -71,14 +68,14 @@ fun ServiceMapScreen(
         viewModel.load(serviceId)
     }
 
-    LaunchedEffect(service, mapLoaded, mapWidthPx, mapHeightPx) {
+    LaunchedEffect(service, mapWidthPx, mapHeightPx) {
         val currentService = service ?: return@LaunchedEffect
-        if (!mapLoaded || mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
+        if (mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
 
         val locationPoints = currentService.locations.map { LatLng(it.latitude, it.longitude) }
-        val points = locationPoints.ifEmpty {
+        val points = (locationPoints.ifEmpty {
             currentService.vessels.map { LatLng(it.latitude, it.longitude) }
-        }
+        }).distinctBy { it.latitude to it.longitude }
 
         when (points.size) {
             0 -> cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(fallbackLocation, 8f))
@@ -92,7 +89,6 @@ fun ServiceMapScreen(
                 )
             }
         }
-        cameraReady = true
     }
 
     Scaffold(
@@ -118,7 +114,6 @@ fun ServiceMapScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
-                .alpha(if (cameraReady) 1f else 0f)
                 .onSizeChanged {
                     mapWidthPx = it.width
                     mapHeightPx = it.height
@@ -129,7 +124,6 @@ fun ServiceMapScreen(
                 mapStyleOptions = mapStyle,
             ),
             contentPadding = PaddingValues(bottom = navigationBarPadding.calculateBottomPadding()),
-            onMapLoaded = { mapLoaded = true },
         ) {
             currentService.locations.forEach { location ->
                 Marker(

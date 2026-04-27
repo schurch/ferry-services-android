@@ -32,7 +32,7 @@ fun googleServicesApiKey(): String {
 }
 
 val mapsApiKey = providers.gradleProperty("MAPS_API_KEY")
-    .orElse(localProperties.getProperty("MAPS_API_KEY") ?: googleServicesApiKey())
+    .orElse(System.getenv("MAPS_API_KEY") ?: localProperties.getProperty("MAPS_API_KEY") ?: googleServicesApiKey())
 
 fun stringProperty(name: String): String? =
     providers.gradleProperty(name).orNull
@@ -157,7 +157,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation("com.google.firebase:firebase-messaging-ktx:24.1.1")
-    implementation("io.sentry:sentry-android:6.17.0")
+    implementation("io.sentry:sentry-android-core:6.17.0")
     implementation("androidx.browser:browser:1.8.0")
     implementation("androidx.webkit:webkit:1.12.1")
 
