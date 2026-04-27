@@ -157,7 +157,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation("com.google.firebase:firebase-messaging-ktx:24.1.1")
-    implementation("io.sentry:sentry-android:6.17.0") {
+    implementation("io.sentry:sentry-android:8.37.1") {
         exclude(group = "io.sentry", module = "sentry-android-ndk")
     }
     implementation("androidx.browser:browser:1.8.0")
