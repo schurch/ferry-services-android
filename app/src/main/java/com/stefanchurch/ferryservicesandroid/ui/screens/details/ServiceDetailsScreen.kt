@@ -809,11 +809,14 @@ private fun InlineServiceMap(
             0 -> cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(fallbackLocation, 8f))
             1 -> cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(points.first(), 10f))
             else -> {
+                val boundsPaddingPx = 120
+                if (mapWidthPx <= boundsPaddingPx * 2 || mapHeightPx <= boundsPaddingPx * 2) return@LaunchedEffect
+
                 val bounds = LatLngBounds.builder().apply {
                     points.forEach(::include)
                 }.build()
                 cameraPositionState.move(
-                    CameraUpdateFactory.newLatLngBounds(bounds, mapWidthPx, mapHeightPx, 120),
+                    CameraUpdateFactory.newLatLngBounds(bounds, mapWidthPx, mapHeightPx, boundsPaddingPx),
                 )
             }
         }
