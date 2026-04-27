@@ -51,6 +51,8 @@ class MainActivity : ComponentActivity() {
 
     private fun registerInstallationIfPossible() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) return@addOnCompleteListener
+
             val token = task.result ?: return@addOnCompleteListener
             viewModel.registerInstallation(token)
         }
