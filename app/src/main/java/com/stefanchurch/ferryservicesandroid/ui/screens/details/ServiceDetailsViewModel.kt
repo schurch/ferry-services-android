@@ -15,6 +15,7 @@ import com.stefanchurch.ferryservicesandroid.ui.model.ScheduledDepartureSectionU
 import com.stefanchurch.ferryservicesandroid.ui.model.globallySharedDepartureNote
 import com.stefanchurch.ferryservicesandroid.ui.model.groupedDepartureSections
 import com.stefanchurch.ferryservicesandroid.util.formatDate
+import com.stefanchurch.ferryservicesandroid.util.hasAvailableGooglePlayServices
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -104,7 +105,8 @@ class ServiceDetailsViewModel @Inject constructor(
                     selectedDate = snapshot.selectedDate,
                     subscribed = serviceId in snapshot.subscribedIds,
                     loadingSubscribed = snapshot.loadingSubscribed,
-                    notificationsAuthorized = NotificationManagerCompat.from(getApplication()).areNotificationsEnabled(),
+                    notificationsAuthorized = hasAvailableGooglePlayServices(getApplication()) &&
+                        NotificationManagerCompat.from(getApplication()).areNotificationsEnabled(),
                     registeredForNotifications = snapshot.registeredForNotifications,
                     scheduleSections = snapshot.service?.groupedDepartureSections(Instant.now()).orEmpty(),
                     sharedDepartureNote = snapshot.service?.globallySharedDepartureNote(),
@@ -169,7 +171,8 @@ class ServiceDetailsViewModel @Inject constructor(
             errorMessage.value = null
             runCatching {
                 if (subscribed && !repository.isRegisteredForNotifications.first()) {
-                    repository.registerInstallation(fetchFcmToken())
+                    val token = fetchFcmToken(getApplication()) ?: error("FCM token unavailable")
+                    repository.registerInstallation(token)
                 }
                 repository.toggleSubscription(serviceId, subscribed)
             }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.firebase.messaging.FirebaseMessaging
+import com.stefanchurch.ferryservicesandroid.util.hasAvailableGooglePlayServices
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -50,10 +51,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun registerInstallationIfPossible() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+        if (!hasAvailableGooglePlayServices(this)) return
+
+        runCatching { FirebaseMessaging.getInstance().token }.getOrNull()?.addOnCompleteListener { task ->
             if (!task.isSuccessful) return@addOnCompleteListener
 
-            val token = task.result ?: return@addOnCompleteListener
+            val token = runCatching { task.result }.getOrNull() ?: return@addOnCompleteListener
             viewModel.registerInstallation(token)
         }
     }

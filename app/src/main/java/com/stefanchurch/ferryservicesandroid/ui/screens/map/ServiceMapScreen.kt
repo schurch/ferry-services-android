@@ -63,13 +63,15 @@ fun ServiceMapScreen(
     }
     var mapWidthPx by remember { mutableStateOf(0) }
     var mapHeightPx by remember { mutableStateOf(0) }
+    var mapLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(serviceId) {
         viewModel.load(serviceId)
     }
 
-    LaunchedEffect(service, mapWidthPx, mapHeightPx) {
+    LaunchedEffect(service, mapWidthPx, mapHeightPx, mapLoaded) {
         val currentService = service ?: return@LaunchedEffect
+        if (!mapLoaded) return@LaunchedEffect
         if (mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
 
         val locationPoints = currentService.locations.map { LatLng(it.latitude, it.longitude) }
@@ -127,6 +129,7 @@ fun ServiceMapScreen(
                 mapStyleOptions = mapStyle,
             ),
             contentPadding = PaddingValues(bottom = navigationBarPadding.calculateBottomPadding()),
+            onMapLoaded = { mapLoaded = true },
         ) {
             currentService.locations.forEach { location ->
                 Marker(

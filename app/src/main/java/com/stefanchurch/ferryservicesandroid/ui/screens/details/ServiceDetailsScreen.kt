@@ -225,14 +225,14 @@ fun ServiceDetailsScreen(
                     contentPadding = PaddingValues(bottom = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
-                    item {
+                    item(key = "inline-map") {
                         InlineServiceMap(
                             service = service,
                             onOpenMap = { openMap(serviceId) },
                         )
                     }
 
-                    item {
+                    item(key = "service-summary") {
                         DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
                             Text(
                                 text = service.area,
@@ -250,7 +250,7 @@ fun ServiceDetailsScreen(
                         }
                     }
 
-                    item {
+                    item(key = "subscription") {
                         DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -274,7 +274,10 @@ fun ServiceDetailsScreen(
                         }
                     }
 
-                    items(service.locations.sortedBy { it.name }) { location ->
+                    items(
+                        items = service.locations.sortedBy { it.name },
+                        key = { location -> "location-${location.name}" },
+                    ) { location ->
                         LocationInfoCard(modifier = Modifier.padding(horizontal = 20.dp)) {
                             Text(
                                 text = location.name,
@@ -334,7 +337,7 @@ fun ServiceDetailsScreen(
                     }
 
                     if (state.showSchedule) {
-                        item {
+                        item(key = "schedule-controls") {
                             DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
                                 SectionHeading("Scheduled departures")
                                 Button(
@@ -797,8 +800,10 @@ private fun InlineServiceMap(
     }
     var mapWidthPx by remember(service.serviceId) { mutableStateOf(0) }
     var mapHeightPx by remember(service.serviceId) { mutableStateOf(0) }
+    var mapLoaded by remember(service.serviceId) { mutableStateOf(false) }
 
-    androidx.compose.runtime.LaunchedEffect(service, mapWidthPx, mapHeightPx) {
+    androidx.compose.runtime.LaunchedEffect(service, mapWidthPx, mapHeightPx, mapLoaded) {
+        if (!mapLoaded) return@LaunchedEffect
         if (mapWidthPx == 0 || mapHeightPx == 0) return@LaunchedEffect
         val locationPoints = service.locations.map { LatLng(it.latitude, it.longitude) }
         val points = (locationPoints.ifEmpty {
@@ -849,6 +854,7 @@ private fun InlineServiceMap(
                 rotationGesturesEnabled = false,
                 tiltGesturesEnabled = false,
             ),
+            onMapLoaded = { mapLoaded = true },
         ) {
             service.locations.forEach { location ->
                 Marker(

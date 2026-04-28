@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.stefanchurch.ferryservicesandroid.BuildConfig
 import com.stefanchurch.ferryservicesandroid.data.repository.ServicesRepository
 import com.stefanchurch.ferryservicesandroid.notifications.fetchFcmToken
+import com.stefanchurch.ferryservicesandroid.util.hasAvailableGooglePlayServices
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,11 +38,13 @@ class SettingsViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            val systemEnabled = NotificationManagerCompat.from(getApplication()).areNotificationsEnabled()
+            val systemEnabled = hasAvailableGooglePlayServices(getApplication()) &&
+                NotificationManagerCompat.from(getApplication()).areNotificationsEnabled()
             if (systemEnabled) {
                 runCatching {
                     if (!repository.isRegisteredForNotifications.first()) {
-                        repository.registerInstallation(fetchFcmToken())
+                        val token = fetchFcmToken(getApplication()) ?: return@runCatching
+                        repository.registerInstallation(token)
                     }
                 }
             }
@@ -57,7 +60,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 if (!repository.isRegisteredForNotifications.first()) {
-                    repository.registerInstallation(fetchFcmToken())
+                    val token = fetchFcmToken(getApplication()) ?: return@runCatching
+                    repository.registerInstallation(token)
                 }
                 repository.updatePushStatus(enabled)
             }

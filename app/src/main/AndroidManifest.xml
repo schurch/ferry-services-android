@@ -31,6 +31,10 @@
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/ferry_notification_tint" />
 
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
