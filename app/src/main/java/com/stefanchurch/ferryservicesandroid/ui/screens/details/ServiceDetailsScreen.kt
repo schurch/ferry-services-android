@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -66,8 +68,14 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -89,6 +97,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.stefanchurch.ferryservicesandroid.R
 import com.stefanchurch.ferryservicesandroid.data.model.Service
 import com.stefanchurch.ferryservicesandroid.data.model.Service.Location.Weather
+import com.stefanchurch.ferryservicesandroid.data.model.ServiceStatus
 import com.stefanchurch.ferryservicesandroid.ui.model.ScheduledDepartureSectionUiModel
 import com.stefanchurch.ferryservicesandroid.ui.components.SectionHeading
 import com.stefanchurch.ferryservicesandroid.ui.components.ServiceStatusIndicator
@@ -373,20 +382,12 @@ fun ServiceDetailsScreen(
                                         modifier = Modifier.padding(start = 8.dp),
                                     )
                                 }
-                                val timetableNoteColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                if (state.showScheduleWarning) {
-                                    Text(
-                                        "Timetable data may not match live operations. Check the operator for the latest update.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = timetableNoteColor,
-                                    )
-                                }
+                                ScheduledDepartureInfoText(
+                                    service = service,
+                                    onOpenDetails = openWebInfo,
+                                )
                                 state.sharedDepartureNote?.let {
-                                    Text(
-                                        it,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = timetableNoteColor,
-                                    )
+                                    ScheduledDepartureNoteText(it)
                                 }
                             }
                         }
@@ -446,10 +447,9 @@ fun ServiceDetailsScreen(
                                         }
                                     }
                                     section.sharedNote?.let { note ->
-                                        Text(
-                                            note,
+                                        ScheduledDepartureNoteText(
+                                            text = note,
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                 }
@@ -728,6 +728,113 @@ private fun RailLineIcon(modifier: Modifier = Modifier) {
             end = Offset(size.width * 0.64f, size.height * 0.86f),
             strokeWidth = stroke.width,
             cap = StrokeCap.Round,
+        )
+    }
+}
+
+@Composable
+private fun ScheduledDepartureInfoText(
+    service: Service,
+    onOpenDetails: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val uriHandler = LocalUriHandler.current
+    val linkStyle = SpanStyle(
+        color = MaterialTheme.colorScheme.primary,
+        textDecoration = TextDecoration.Underline,
+    )
+    val textColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val detailsHtml = service.additionalInfo?.takeIf { it.isNotBlank() }
+    val operatorWebsite = service.serviceOperator?.website?.takeIf { it.isNotBlank() }
+    val travelineUrl = "https://www.traveline.info"
+    val showWarningIcon = service.status != ServiceStatus.NORMAL
+
+    val text = buildAnnotatedString {
+        append("Scheduled departure times provided by ")
+        pushStringAnnotation(tag = "url", annotation = travelineUrl)
+        withStyle(linkStyle) {
+            append("Traveline")
+        }
+        pop()
+        append(". Sailings may not be operating to the scheduled departure times. Please check the most ")
+        if (detailsHtml != null) {
+            pushStringAnnotation(tag = "details", annotation = detailsHtml)
+            withStyle(linkStyle) {
+                append("up to date information")
+            }
+            pop()
+        } else {
+            append("up to date information")
+        }
+        append(" from the ferry service operator or their ")
+        if (operatorWebsite != null) {
+            pushStringAnnotation(tag = "url", annotation = operatorWebsite)
+            withStyle(linkStyle) {
+                append("website")
+            }
+            pop()
+        } else {
+            append("website")
+        }
+        append(" for more details.")
+    }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (showWarningIcon) {
+            Icon(
+                imageVector = Icons.Outlined.WarningAmber,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .size(18.dp),
+            )
+        }
+        ClickableText(
+            text = text,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium.merge(TextStyle(color = textColor)),
+            onClick = { offset ->
+                text.getStringAnnotations(tag = "details", start = offset, end = offset)
+                    .firstOrNull()
+                    ?.let { onOpenDetails(it.item) }
+                    ?: text.getStringAnnotations(tag = "url", start = offset, end = offset)
+                        .firstOrNull()
+                        ?.let { uriHandler.openUri(it.item) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ScheduledDepartureNoteText(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+) {
+    val textColor = MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.Notes,
+            contentDescription = null,
+            tint = textColor,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(18.dp),
+        )
+        Text(
+            text = text,
+            style = style,
+            color = textColor,
+            modifier = Modifier.weight(1f),
         )
     }
 }
