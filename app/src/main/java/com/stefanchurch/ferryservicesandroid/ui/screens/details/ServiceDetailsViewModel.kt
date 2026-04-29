@@ -3,6 +3,7 @@ package com.stefanchurch.ferryservicesandroid.ui.screens.details
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -63,6 +64,7 @@ class ServiceDetailsViewModel @Inject constructor(
     private val failedToLoad = MutableStateFlow(false)
     private val loadingSubscribed = MutableStateFlow(false)
     private val errorMessage = MutableStateFlow<String?>(null)
+    private val notificationsAuthorized = MutableStateFlow(notificationsAvailable())
 
     private data class ServiceDetailsSnapshot(
         val service: Service?,
@@ -73,6 +75,7 @@ class ServiceDetailsViewModel @Inject constructor(
         val failedToLoad: Boolean,
         val loadingSubscribed: Boolean,
         val errorMessage: String?,
+        val notificationsAuthorized: Boolean,
     )
 
     fun uiState(serviceId: Int): StateFlow<ServiceDetailsUiState> {
@@ -80,8 +83,8 @@ class ServiceDetailsViewModel @Inject constructor(
             combine(service, selectedDate, repository.subscribedServiceIds, repository.isRegisteredForNotifications) { currentService, date, subscribedIds, isRegistered ->
                 PartialA(currentService, date, subscribedIds, isRegistered)
             },
-            combine(loading, failedToLoad, loadingSubscribed, errorMessage) { isLoading, didFail, subscriptionLoading, message ->
-                PartialB(isLoading, didFail, subscriptionLoading, message)
+            combine(loading, failedToLoad, loadingSubscribed, errorMessage, notificationsAuthorized) { isLoading, didFail, subscriptionLoading, message, hasNotifications ->
+                PartialB(isLoading, didFail, subscriptionLoading, message, hasNotifications)
             },
         ) { a, b ->
             ServiceDetailsSnapshot(
@@ -93,6 +96,7 @@ class ServiceDetailsViewModel @Inject constructor(
                 failedToLoad = b.failedToLoad,
                 loadingSubscribed = b.loadingSubscribed,
                 errorMessage = b.errorMessage,
+                notificationsAuthorized = b.notificationsAuthorized,
             )
         }
 
@@ -105,8 +109,7 @@ class ServiceDetailsViewModel @Inject constructor(
                     selectedDate = snapshot.selectedDate,
                     subscribed = serviceId in snapshot.subscribedIds,
                     loadingSubscribed = snapshot.loadingSubscribed,
-                    notificationsAuthorized = hasAvailableGooglePlayServices(getApplication()) &&
-                        NotificationManagerCompat.from(getApplication()).areNotificationsEnabled(),
+                    notificationsAuthorized = snapshot.notificationsAuthorized,
                     registeredForNotifications = snapshot.registeredForNotifications,
                     scheduleSections = snapshot.service?.groupedDepartureSections(Instant.now()).orEmpty(),
                     sharedDepartureNote = snapshot.service?.globallySharedDepartureNote(),
@@ -128,7 +131,17 @@ class ServiceDetailsViewModel @Inject constructor(
         val failedToLoad: Boolean,
         val loadingSubscribed: Boolean,
         val errorMessage: String?,
+        val notificationsAuthorized: Boolean,
     )
+
+    private fun notificationsAvailable(): Boolean {
+        return hasAvailableGooglePlayServices(getApplication()) &&
+            NotificationManagerCompat.from(getApplication()).areNotificationsEnabled()
+    }
+
+    fun refreshNotificationAuthorization() {
+        notificationsAuthorized.value = notificationsAvailable()
+    }
 
     fun load(serviceId: Int) {
         if (service.value == null && loading.value) {
@@ -183,6 +196,12 @@ class ServiceDetailsViewModel @Inject constructor(
 
     fun dismissError() {
         errorMessage.value = null
+    }
+
+    fun appNotificationSettingsIntent(): Intent {
+        return Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, getApplication<Application>().packageName)
+        }
     }
 
     fun supportEmailIntent(serviceId: Int, state: ServiceDetailsUiState): Intent {

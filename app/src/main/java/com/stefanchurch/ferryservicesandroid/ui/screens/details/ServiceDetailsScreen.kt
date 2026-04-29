@@ -49,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -69,7 +70,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -111,9 +115,22 @@ fun ServiceDetailsScreen(
     var showDatePicker by remember { mutableLongStateOf(0L) }
     var selectedDepartureNote by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     androidx.compose.runtime.LaunchedEffect(serviceId) {
         viewModel.load(serviceId)
+    }
+
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshNotificationAuthorization()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     if (state.errorMessage != null) {
@@ -252,24 +269,28 @@ fun ServiceDetailsScreen(
 
                     item(key = "subscription") {
                         DetailSection(modifier = Modifier.padding(horizontal = 20.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("Subscribe to updates", modifier = Modifier.weight(1f))
-                                Switch(
-                                    checked = state.subscribed,
-                                    enabled = !state.loadingSubscribed && state.notificationsAuthorized,
-                                    onCheckedChange = { viewModel.updateSubscribed(serviceId, it) },
-                                )
-                            }
                             if (!state.notificationsAuthorized) {
-                                Text(
-                                    "Enable app notifications in Android settings to manage service updates.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                OutlinedButton(
+                                    onClick = {
+                                        context.startActivity(viewModel.appNotificationSettingsIntent())
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text("Enable notifications in Settings")
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("Subscribe to updates", modifier = Modifier.weight(1f))
+                                    Switch(
+                                        checked = state.subscribed,
+                                        enabled = !state.loadingSubscribed,
+                                        onCheckedChange = { viewModel.updateSubscribed(serviceId, it) },
+                                    )
+                                }
                             }
                         }
                     }
