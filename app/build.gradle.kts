@@ -47,6 +47,7 @@ val releaseStoreFilePath = stringProperty("ANDROID_RELEASE_STORE_FILE")
 val releaseStorePassword = stringProperty("ANDROID_RELEASE_STORE_PASSWORD")
 val releaseKeyAlias = stringProperty("ANDROID_RELEASE_KEY_ALIAS")
 val releaseKeyPassword = stringProperty("ANDROID_RELEASE_KEY_PASSWORD")
+val apiBaseUrl = stringProperty("API_BASE_URL") ?: "https://scottishferryapp.com/"
 val hasReleaseSigningConfig = listOf(
     releaseStoreFilePath,
     releaseStorePassword,
@@ -68,10 +69,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        buildConfigField("String", "API_BASE_URL", "\"https://scottishferryapp.com/\"")
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SUPPORT_EMAIL", "\"stefan.church@gmail.com\"")
         buildConfigField("String", "PLAY_STORE_URL", "\"https://play.google.com/store/apps/details?id=com.stefanchurch.ferryservices\"")
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey.get()
+        manifestPlaceholders["USES_CLEARTEXT_TRAFFIC"] = "false"
     }
 
     signingConfigs {
@@ -86,6 +88,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["USES_CLEARTEXT_TRAFFIC"] = "true"
+        }
+
         release {
             isMinifyEnabled = true
             isShrinkResources = true

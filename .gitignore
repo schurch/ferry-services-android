@@ -5,8 +5,10 @@
 build/
 app/build/
 .android-cli/
+.android/
 .android-home/
 .android-sdk/
+.codex
 
 # Local machine configuration and secrets
 local.properties
