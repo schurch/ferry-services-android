@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -72,6 +71,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextAlign
@@ -330,6 +330,9 @@ fun ServiceDetailsScreen(
                                     },
                                     label = "Next rail departure",
                                     value = "${formatTime(rail.departure).ifBlank { rail.departure }} to ${rail.to}",
+                                    supportingContent = {
+                                        RailDepartureInfoText(railDeparture = rail)
+                                    },
                                 )
                             }
                             location.weather?.let { weather ->
@@ -457,17 +460,14 @@ fun ServiceDetailsScreen(
                         }
 
                         item {
-                            TextButton(
-                                onClick = {
+                            ReportTimetableIssueText(
+                                onReport = {
                                     context.startActivity(viewModel.supportEmailIntent(serviceId, state))
                                 },
                                 modifier = Modifier
                                     .padding(horizontal = 20.dp)
-                                    .wrapContentWidth(Alignment.Start),
-                                contentPadding = PaddingValues(0.dp),
-                            ) {
-                                Text("Report timetable issue")
-                            }
+                                    .fillMaxWidth(),
+                            )
                         }
                     }
 
@@ -482,6 +482,39 @@ fun ServiceDetailsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ReportTimetableIssueText(
+    onReport: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val linkTag = "report-timetable-issue"
+    val textColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val linkStyle = SpanStyle(
+        color = MaterialTheme.colorScheme.primary,
+        textDecoration = TextDecoration.Underline,
+    )
+    val text = buildAnnotatedString {
+        append("If you spot an issue with the timetable, please get in ")
+        pushStringAnnotation(tag = linkTag, annotation = linkTag)
+        withStyle(linkStyle) {
+            append("contact")
+        }
+        pop()
+        append(".")
+    }
+
+    ClickableText(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.bodyMedium.merge(TextStyle(color = textColor)),
+        onClick = { offset ->
+            text.getStringAnnotations(tag = linkTag, start = offset, end = offset)
+                .firstOrNull()
+                ?.let { onReport() }
+        },
+    )
 }
 
 @Composable
@@ -625,6 +658,7 @@ private fun LocationInfoItem(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    supportingContent: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -643,13 +677,53 @@ private fun LocationInfoItem(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
+            )
+            supportingContent?.invoke(this)
+        }
+    }
+}
+
+@Composable
+private fun RailDepartureInfoText(
+    railDeparture: Service.Location.RailDeparture,
+    modifier: Modifier = Modifier,
+) {
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val departureInfoColor = if (railDeparture.isCancelled) {
+        MaterialTheme.colorScheme.error
+    } else {
+        textColor
+    }
+    val platform = railDeparture.platform?.trim()?.takeIf { it.isNotEmpty() }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = railDeparture.departureInfo,
+            style = MaterialTheme.typography.bodyMedium,
+            color = departureInfoColor,
+        )
+        if (platform != null) {
+            Text(
+                text = "\u2022",
+                style = MaterialTheme.typography.bodyMedium,
+                color = textColor,
+            )
+            Text(
+                text = "Platform $platform",
+                style = MaterialTheme.typography.bodyMedium,
+                color = textColor,
             )
         }
     }
